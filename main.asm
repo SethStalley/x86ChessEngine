@@ -1,17 +1,15 @@
-section .data
-	fmt     db "%u  %s",10,0
-	msg1    db "Hello",0
-section .text
  	extern printf
+section .data
+	msg    db "Hello",10,0
+section .text
     	global main
 
-main:
-    mov  edx, msg1
-    mov  esi, 1
-    mov  edi, fmt
-    mov  eax, 0     ; no f.p. args
-    call printf
-
-    	xor eax, eax
+main:	
+	pusha
+	push dword msg	;pointer in stack to msg
+    	call printf	;c function to call
+	add esp, 4	;pop stack
 	popa
+
+    	xor eax, eax	;exit code
 	ret
