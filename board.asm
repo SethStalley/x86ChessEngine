@@ -1,44 +1,28 @@
-global initBoard
+global aiMove
 extern	printf
 
 section .data
 	printD			db	"%d",10,0
 	board dd 0x0
 					;bitboards for white
-	whiteLowerPawns 	dd 	0xff00
-	whiteLowerBishops 	dd	0x24
-	whiteLowerKnights 	dd 	0x42
-	whiteLowerCastles 	dd 	0x81
-	whiteLowerQueens 	dd 	0x8
-	whiteLowerKing 		dd 	0x10
-
-	whiteUpperPawns 	dd 	0x0
-	whiteUpperBishops 	dd 	0x0
-	whiteUpperKnights 	dd 	0x0
-	whiteUpperCastles 	dd 	0x0
-	whiteUpperQueens	dd	0x0
-	whiteUpperKing 		dd 	0x0
+	whitePawns 	dq 	0xff00
+	whiteBishops 	dq	0x24
+	whiteKnights 	dq 	0x42
+	whiteCastles 	dq 	0x81
+	whiteQueens 	dq 	0x8
+	whiteKing 	dq 	0x10
 
 					;bitboards for black
-	blackUpperPawns 	dd 	0xff0000
-	blackUpperBishops 	dd 	0x24000000
-	blackUpperKnights 	dd 	0x42000000
-	blackUpperCastles	dd	0x81000000
-	blackUpperQueens 	dd 	0x8000000
-	blackUpperKing		dd	0x10000000
-	
-	blackLowerPawns		dd 	0x0
-	blackLowerBishops	dd	0x0
-	blackLowerKnights	dd	0x0
-	blackLowerCastles	dd	0x0
-	blackLowerQueens	dd	0x0
-	blackLowerKing		dd	0x0
-
+	blackPawns 	dq 	0xff000000000000
+	blackBishops 	dq 	0x2400000000000000
+	blackKnights 	dq 	0x4200000000000000
+	blackCastles	dq	0x8100000000000000
+	blackQueens 	dq 	0x800000000000000
+	blacKing	dq	0x1000000000000000
 
 section .code
-initBoard:
-	mov eax, [whiteLowerPawns]
-	push eax
+aiMove:
+	mov rax, [whitePawns]
 	call calcMove
 	ret
 
@@ -47,25 +31,24 @@ initBoard:
 ;Push piece mov function
 ;-------------------------------
 calcMove:		
-	add esp, 4
-upperMoves:			;second run through to calc upper board
-	pop eax
-	mov ecx, 0x1
-loop:			
-	push eax		;save bitboard
-	push ecx
-	and eax, ecx		;is there a piece here?
-	push eax
-	push printD
+	mov rcx, 0x1
+loopPieces:
+	push rax
+	push rcx
+
+	and rcx, rax
+	mov rsi, rcx
+	mov edi, printD
+	mov eax, 0
 	call printf
-	add esp, 8
-	pop ecx
-	pop eax
+
+	pop rcx
+	pop rax
 	
-	cmp ecx, 0x80000000	;if we compared all the bits
+	cmp rcx, 0x8000000000000000
 	je endMovCalc
 
-	shl ecx, 0x1		;shift right one bit
-	jne loop
+	shl rcx, 0x1
+	jmp loopPieces
 endMovCalc:
 	ret

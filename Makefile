@@ -2,13 +2,13 @@ TARGET =  main	#main target to compile
 NAME = Chess
 
 all: $(TARGET:=.o)
-	gcc -m32 $(TARGET:=.o) board.o -o $(NAME) 
+	gcc $(TARGET:=.o) board.o -o $(NAME) 
 
 $(TARGET:=.o): board
-	nasm -felf32 $(TARGET:=.asm)
+	nasm -felf64 $(TARGET:=.asm)
 
 board: clean
-	nasm -felf32 board.asm
+	nasm -felf64 board.asm
 
 clean:
 	-rm -f $(TARGET:=.o)
