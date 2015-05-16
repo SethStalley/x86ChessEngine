@@ -7,10 +7,6 @@ section .text
 main:	
 	pusha
 	call initBoard
-	push eax
-	push msg
-    	call printf	;c function to call
-	add esp,8	;pop stack
 	popa
 	
 

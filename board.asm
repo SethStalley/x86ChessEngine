@@ -14,8 +14,8 @@ section .data
 	whiteUpperBishops 	dd 	0x0
 	whiteUpperKnights 	dd 	0x0
 	whiteUpperCastles 	dd 	0x0
-	WhiteUpperQueens	dd	0x0
-	WhiteUpperKing 		dd 	0x0
+	whiteUpperQueens	dd	0x0
+	whiteUpperKing 		dd 	0x0
 
 					;bitboards for black
 	blackUpperPawns 	dd 	0xff0000
@@ -35,5 +35,21 @@ section .data
 
 section .code
 initBoard:
-	mov eax, [blackUpperPawns]
+	mov eax, [whiteLowerPawns]
+	push eax
+	call pawnMoves
+	ret
+
+pawnMoves:		;expects a pawn bitboard dd in stack
+	pop eax
+	mov ecx, 32
+loop:			;find pawn positions
+	push eax
+	and eax, ecx
+	pop eax
+	dec ecx	
+	cmp ecx, 0
+	jle loop
+
+	pop eax
 	ret
