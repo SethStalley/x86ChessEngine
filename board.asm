@@ -2,7 +2,7 @@ global aiMove
 extern	printf
 
 section .data
-	printD			db	"%d",10,0
+	printD			db	"%016llx",10,0
 	board dd 0x0
 					;bitboards for white
 	whitePawns 	dq 	0xff00
@@ -22,7 +22,7 @@ section .data
 
 section .code
 aiMove:
-	mov rax, [whitePawns]
+	mov rax, [blackCastles]
 	call calcMove
 	ret
 
@@ -45,10 +45,9 @@ loopPieces:
 	pop rcx
 	pop rax
 	
-	cmp rcx, 0x8000000000000000
-	je endMovCalc
 
 	shl rcx, 0x1
-	jmp loopPieces
+	cmp rcx, 0x8000000000000000
+	jne loopPieces
 endMovCalc:
 	ret
