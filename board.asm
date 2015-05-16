@@ -1,6 +1,8 @@
 global initBoard
+extern	printf
 
 section .data
+	printD			db	"%d",10,0
 	board dd 0x0
 					;bitboards for white
 	whiteLowerPawns 	dd 	0xff00
@@ -37,19 +39,33 @@ section .code
 initBoard:
 	mov eax, [whiteLowerPawns]
 	push eax
-	call pawnMoves
+	call calcMove
 	ret
 
-pawnMoves:		;expects a pawn bitboard dd in stack
+;-------------------------------
+;Push lower and upper bitmap
+;Push piece mov function
+;-------------------------------
+calcMove:		
+	add esp, 4
+upperMoves:			;second run through to calc upper board
 	pop eax
-	mov ecx, 32
-loop:			;find pawn positions
+	mov ecx, 0x1
+loop:			
+	push eax		;save bitboard
+	push ecx
+	and eax, ecx		;is there a piece here?
 	push eax
-	and eax, ecx
+	push printD
+	call printf
+	add esp, 8
+	pop ecx
 	pop eax
-	dec ecx	
-	cmp ecx, 0
-	jle loop
+	
+	cmp ecx, 0x80000000	;if we compared all the bits
+	je endMovCalc
 
-	pop eax
+	shl ecx, 0x1		;shift right one bit
+	jne loop
+endMovCalc:
 	ret

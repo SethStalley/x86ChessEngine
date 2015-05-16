@@ -5,10 +5,7 @@ section .text
     	global main
 
 main:	
-	pusha
 	call initBoard
-	popa
 	
-
     	xor eax, eax	;exit code
 	ret
