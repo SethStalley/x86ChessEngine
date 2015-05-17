@@ -116,23 +116,18 @@ pawnMove:
 	;cmp cx, 0		;if dd then white
 	;jne blackPawn
 whitePawn:
-	add rsp, 16
-	push rcx
+	push rcx				;save original pawns place
 	shl rcx, 0x8		;check one move forward
 
 	mov rax, [whiteBoard]
 	not rax
 	and rcx, rax
-	cmp rcx, 0		;if not posible move
+	pop rax					;get roginal pawn pos back in rax
+
+	cmp rcx, 0			;if not posible move we are done
 	je donePawnMove
 
-	mov rsi, rcx
-	mov edi, printD
-	mov eax, 0
-	;call printf
-
-	pop rax
-	or rcx, rax
+	xor [whitePawns], rax		;eliminate the pawn to move
 	xor [whitePawns], rcx		;make the pawnMove
 	jmp donePawnMove
 blackPawn:
