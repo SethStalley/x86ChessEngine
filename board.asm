@@ -2,9 +2,12 @@ global aiMove
 extern	printf
 
 section .data
-	printH			db	"%016llx",10,0	;print in hex 64bit
-	printD			db	"%d",10,0		;print normal decimal
-	printHere		db	"Here",10,0		;test msg
+	printH		db	"%016llx",10,0	;print in hex 64bit
+	printD		db	"%d",10,0		;print normal decimal
+	printHere	db	"Here",10,0		;test msg
+
+
+	aiDepth		db	2		;depth for negaMax tree
 
 	blackBoard dq 0x0		;used to store black pieces when calc
 	whiteBoard dq 0x0		;used to store white pieces when calc
@@ -34,6 +37,23 @@ aiMove:
 	mov rax, [whitePawns]
 	call calcMove
 	ret
+
+;--------------------------------------
+;NegaMax Procedure
+;This is the backbone of our AI
+;analyzes all best moves to "AIdepth"
+;for each player choces best for itself
+;---------
+;Expects depth in cl
+;--------------------------------------
+ai:
+	cmp cl, 0
+	je doneAi
+	;mov rax
+doneAi:
+	push whitePawns	;this needs to be dynamic
+	call eval						;get an evaluation
+	ret								;done
 
 ;-------------------------------
 ;Push lower and upper bitmap
