@@ -55,7 +55,7 @@ loopPieces:
 	;mov rsi, rcx
 	mov edi, printD
 	mov eax, 0
-	;call printf
+	call printf
 	pop rcx
 	pop rax
 
@@ -116,12 +116,9 @@ pawnMove:
 	;cmp cx, 0		;if dd then white
 	;jne blackPawn
 whitePawn:
+	add rsp, 16
+	push rcx
 	shl rcx, 0x8		;check one move forward
-
-	mov rsi, rcx
-	mov edi, printD
-	mov eax, 0
-	call printf
 
 	mov rax, [whiteBoard]
 	not rax
@@ -129,10 +126,13 @@ whitePawn:
 	cmp rcx, 0		;if not posible move
 	je donePawnMove
 
-	;mov edi, printHere
-	;mov eax, 0
+	mov rsi, rcx
+	mov edi, printD
+	mov eax, 0
 	;call printf
 
+	pop rax
+	or rcx, rax
 	xor [whitePawns], rcx		;make the pawnMove
 	jmp donePawnMove
 blackPawn:
