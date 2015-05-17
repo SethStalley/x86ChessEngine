@@ -2,22 +2,22 @@ global aiMove
 extern	printf
 
 section .data
-	printH			db	"%016llx",10,0			;print in hex 64bit
-	printD			db	"%d",10,0						;print normal decimal
-	printHere		db	"Here",10,0					;test msg
+	printH			db	"%016llx",10,0	;print in hex 64bit
+	printD			db	"%d",10,0		;print normal decimal
+	printHere		db	"Here",10,0		;test msg
 
 	blackBoard dq 0x0		;used to store black pieces when calc
 	whiteBoard dq 0x0		;used to store white pieces when calc
 
-					;bitboards for white
-	whitePawns 	  dq 	0xff00
+							;bitboards for white
+	whitePawns 		dq 	0xff00
 	whiteBishops 	dq	0x24
 	whiteKnights 	dq 	0x42
 	whiteCastles 	dq 	0x81
 	whiteQueens 	dq 	0x8
-	whiteKing 	  dq 	0x10
+	whiteKing 		dq 	0x10
 
-					;bitboards for black
+							;bitboards for black
 	blackPawns  	dq 	0xff000000000000
 	blackBishops 	dq 	0x2400000000000000
 	blackKnights 	dq 	0x4200000000000000
@@ -46,12 +46,12 @@ loopPieces:
 	push rcx
 
 	;and rcx, rax
-	;call pawnMove					;call the procedure for that piece
+	;call pawnMove				;call the procedure for that piece
 
 	;mov rbx, whitePawns		;test of eval procedure
 	;call eval
 
-	;mov rsi, rax						;temp print stuff
+	;mov rsi, rax				;temp print stuff
 	;mov edi, printD
 	;mov eax, 0
 	;call printf
@@ -79,24 +79,24 @@ endMovCalc:
 ;-------------------------------
 eval:
 	push rcx
-	popcnt rax, [rbx]							;count how many bits are on
-	popcnt rcx, [rbx+8]						;bishop bitBoard
-	imul rcx, 3										;bishop weight
-	add rax, rcx									;add it to values
-	popcnt rcx, [rbx+16]					;kights to bitboard
-	imul rcx, 3										;knight weight
+	popcnt rax, [rbx]			;count how many bits are on
+	popcnt rcx, [rbx+8]			;bishop bitBoard
+	imul rcx, 3					;bishop weight
+	add rax, rcx				;add it to values
+	popcnt rcx, [rbx+16]		;kights to bitboard
+	imul rcx, 3					;knight weight
 	add rax, rcx
-	popcnt rcx, [rbx+24]					;rooks
-	imul rcx, 5										;rook value
+	popcnt rcx, [rbx+24]		;rooks
+	imul rcx, 5					;rook value
 	add rax, rcx
-	popcnt rcx, [rbx+32]					;queens
-	imul rcx, 9										;queen value
+	popcnt rcx, [rbx+32]		;queens
+	imul rcx, 9					;queen value
 	add rax, rcx
-	popcnt rcx, [rbx+40]					;still have a king?
-	imul rcx, 200									;king's value
+	popcnt rcx, [rbx+40]		;still have a king?
+	imul rcx, 200				;king's value
 	add rax, rcx
 	pop rcx
-	ret														;end of procedure
+	ret							;end of procedure
 
 ;-------------------------------
 ;Fill board with all black positions
@@ -106,9 +106,9 @@ fillBlackBoard:
 	push rcx
 	push rbx
 	mov rcx, 6
-	mov rbx, blackPawns					;start of black bitboards address
+	mov rbx, blackPawns			;start of black bitboards address
 	xor rax, rax
-loopfillBlackBoard:						;loop through the bitboards
+loopfillBlackBoard:				;loop through the bitboards
 	or rax, [rbx + rcx * 8]
 	dec rcx
 	cmp rcx, 0
@@ -122,7 +122,7 @@ loopfillBlackBoard:						;loop through the bitboards
 ;-------------------------------
 ;Fill board with all white positions
 ;-------------------------------
-fillWhiteBoard:								;same as fillBlackBoard but white
+fillWhiteBoard:					;same as fillBlackBoard but white
 	push rax
 	push rcx
 	push rbx
@@ -145,18 +145,18 @@ loopfillWhiteBoard:
 ;bitboard in rax and cx = 0 white
 ;-------------------------------
 pawnMove:
-	;cmp cx, 0		;if dd then white
+	;cmp cx, 0					;if dd then white
 	;jne blackPawn
 whitePawn:
-	push rcx				;save original pawns place
-	shl rcx, 0x8		;check one move forward
+	push rcx					;save original pawns place
+	shl rcx, 0x8				;check one move forward
 
 	mov rax, [whiteBoard]
 	not rax
 	and rcx, rax
-	pop rax					;get roginal pawn pos back in rax
+	pop rax						;get roginal pawn pos back in rax
 
-	cmp rcx, 0			;if not posible move we are done
+	cmp rcx, 0					;if not posible move we are done
 	je donePawnMove
 
 	xor [whitePawns], rax		;eliminate the pawn to move
@@ -165,4 +165,4 @@ whitePawn:
 blackPawn:
 	call fillBlackBoard
 donePawnMove:
-	ret						;end pawn move
+	ret							;end pawn move
