@@ -2,11 +2,9 @@ global aiMove
 extern	printf
 
 section .data
-	printD			db	"%016llx",10,0
-	printHere		db	"Here",10,0
-
-
-
+	printH			db	"%016llx",10,0			;print in hex 64bit
+	printD			db	"%d",10,0						;print normal decimal
+	printHere		db	"Here",10,0					;test msg
 
 	blackBoard dq 0x0		;used to store black pieces when calc
 	whiteBoard dq 0x0		;used to store white pieces when calc
@@ -37,7 +35,6 @@ aiMove:
 	call calcMove
 	ret
 
-
 ;-------------------------------
 ;Push lower and upper bitmap
 ;Push piece mov function
@@ -48,14 +45,17 @@ loopPieces:
 	push rax
 	push rcx
 
-	and rcx, rax
-	call pawnMove						;call the procedure for that piece
+	;and rcx, rax
+	;call pawnMove					;call the procedure for that piece
 
-	mov rsi, [whitePawns]
-	;mov rsi, rcx
-	mov edi, printD
-	mov eax, 0
-	call printf
+	;mov rbx, whitePawns		;test of eval procedure
+	;call eval
+
+	;mov rsi, rax						;temp print stuff
+	;mov edi, printD
+	;mov eax, 0
+	;call printf
+
 	pop rcx
 	pop rax
 
@@ -65,6 +65,38 @@ loopPieces:
 	jne loopPieces
 endMovCalc:
 	ret
+
+;-------------------------------
+;Evaluates a players side against the oposite
+;Expects address of pawn's bitboard of player to eval in rbx!
+;------------------
+;values:
+;pawns = 1
+;bishops & knights = 3
+;rooks = 5
+;queen = 9
+;king = 200
+;-------------------------------
+eval:
+	push rcx
+	popcnt rax, [rbx]							;count how many bits are on
+	popcnt rcx, [rbx+8]						;bishop bitBoard
+	imul rcx, 3										;bishop weight
+	add rax, rcx									;add it to values
+	popcnt rcx, [rbx+16]					;kights to bitboard
+	imul rcx, 3										;knight weight
+	add rax, rcx
+	popcnt rcx, [rbx+24]					;rooks
+	imul rcx, 5										;rook value
+	add rax, rcx
+	popcnt rcx, [rbx+32]					;queens
+	imul rcx, 9										;queen value
+	add rax, rcx
+	popcnt rcx, [rbx+40]					;still have a king?
+	imul rcx, 200									;king's value
+	add rax, rcx
+	pop rcx
+	ret														;end of procedure
 
 ;-------------------------------
 ;Fill board with all black positions
