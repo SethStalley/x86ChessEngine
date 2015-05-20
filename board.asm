@@ -34,8 +34,12 @@ section .text
 aiMove:
 	call fillWhiteBoard
 
-	mov rax, [whitePawns]
-	call calcMove
+	;mov rax, [whitePawns]
+	;call calcMove
+
+	;testing ai
+	mov cl, 1
+	call ai
 	ret
 
 ;--------------------------------------
@@ -49,9 +53,21 @@ aiMove:
 ai:
 	cmp cl, 0
 	je doneAi
-	;mov rax
+	mov rax, -300					;worse case score
+	push rax
+allMoves:							;loop over all players posible moves
+	dec cl							;dec tree search depth
+	call ai							;recurse
+	pop rbx							;pop last max
+	imul rbx, -1					;negate returned value from eval
+	cmp rbx, rax					;is new score (rbx) higher?
+	jg swapMaxScore
+	jmp allMoves
+swapMaxScore:						;swap max with score
+	mov rax, rbx
+	;jmp allMoves
 doneAi:
-	push whitePawns	;this needs to be dynamic
+	mov rbx, whitePawns				;this needs to be dynamic
 	call eval						;get an evaluation
 	ret								;done
 
