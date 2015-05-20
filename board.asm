@@ -8,6 +8,7 @@ section .data
 
 
 	aiDepth		db	2		;depth for negaMax tree
+	aiPlayer		db 	1		;if ai is black/white default black
 
 	blackBoard dq 0x0		;used to store black pieces when calc
 	whiteBoard dq 0x0		;used to store white pieces when calc
@@ -32,13 +33,14 @@ section .bss
 	resb 1024
 section .text
 aiMove:
-	call fillWhiteBoard
+	;call fillWhiteBoard
 
 	;mov rax, [whitePawns]
 	;call calcMove
 
 	;testing ai
-	mov cl, 1
+	mov ch, [aiPlayer]					;which player is ai
+	mov cl, [aiDepth]					;depth for negamax to check moves
 	call ai
 	ret
 
@@ -51,29 +53,64 @@ aiMove:
 ;Expects depth in cl
 ;--------------------------------------
 ai:
+	call pushGame					;push all bitboards/game state to stack
+
 	cmp cl, 0
-	je doneAi
-	mov rax, -300					;worse case score
-	push rax
-allMoves:							;loop over all players posible moves
+	je doneAi						;reached bottom of our search tree
 	dec cl							;dec tree search depth
+
+	mov rax, -300					;worse case score
+	push rax						;push score
+
+	mov dl, 12						;loop 12 times one for each piece type (each player)
+allMoves:							;loop over all players posible moves
+
 	call ai							;recurse
 	pop rbx							;pop last max
 	imul rbx, -1					;negate returned value from eval
 	cmp rbx, rax					;is new score (rbx) higher?
 	jg swapMaxScore
-	jmp allMoves
-swapMaxScore:						;swap max with score
-	mov rax, rbx
-	;jmp allMoves
+	jmp nextMove
+swapMaxScore:
+	mov rax, rbx					;swap max with score
+nextMove:
+	cmp dl, 12
+	jne allMoves
+
 doneAi:
 	mov rbx, whitePawns				;this needs to be dynamic
 	call eval						;get an evaluation
 	ret								;done
 
+
+;-------------------------------
+;Push all bitboard into stack
+;Negamax uses this to save game state
+;as it checks all moves
+;-------------------------------
+pushGame:					;push all bitboards down into stack
+	push qWord [whitePawns]
+	push qWord [whiteBishops]
+	push qWord [whiteKnights]
+	push qWord [whiteCastles]
+	push qWord [whiteQueens]
+	push qWord [whiteKing]
+
+
+	push qWord [blackPawns]
+	push qWord [blackBishops]
+	push qWord [blackKnights]
+	push qWord [blackCastles]
+	push qWord [blackQueens]
+	push qWord [blackKing]
+
+	add rsp, 8 * 12			;set pointer back up 8 * 12 bytes in stack
+	ret
+
 ;-------------------------------
 ;Push lower and upper bitmap
 ;Push piece mov function
+; won't need this anymore moving to ai procedure
 ;-------------------------------
 calcMove:
 	mov rcx, 0x1
