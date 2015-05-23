@@ -6,7 +6,6 @@ section .data
 	printD		db	"%d",10,0	;print normal decimal
 	printHere	db	"Here",10,0	;test msg
 
-
 	aiDepth		db	2	;depth for negaMax tree
 	aiPlayer	db 	1	;if ai is black/white default black
 
@@ -55,12 +54,20 @@ aiMove:
 
 ;Upper negaMax gets score for every current move on one side
 ai:
-	mov dh, 0	;loop for all the piece types on one side
+	xor rax, rax	;what piece's move we are on
+	call getMoves
 loopAI:
-	call depthNega	;get depth score for that move
 	
-	inc dh
-	cmp dh, 6
+	;call pushGame
+	;sub rsp, 8*12
+
+	;call depthNega	;get depth score for that move
+	
+	;call popGame
+	;add rsp, 8*12
+	
+	dec rax
+	cmp rax, 0
 	je doneAI
 doneAI:
 	ret
@@ -89,7 +96,7 @@ nextOfSamePieceType:	;continue for same piece type
 	pop rax
 
 	;push all bitboards
-	jmp pushGame	
+	;jmp pushGame	
 afterGamePush:
 
 	push rax	;push score
@@ -97,10 +104,9 @@ afterGamePush:
 	pop rbx		;pop last max
 
 	;restore all bitboards
-	jmp popGame	
+	;jmp popGame	
 afterGamePop:
 			;undo move
-
 
 	imul rbx, -1	;negate returned value from eval 
 	cmp rbx, rax	;is new score (rbx) higher?
@@ -141,7 +147,9 @@ pushGame:			;push all bitboards down into stack
 	push qWord [blackQueens]
 	push qWord [blackKing]
 
-	jmp afterGamePush
+	;jmp afterGamePush
+	add rsp, 8 * 12
+	ret
 
 ;-------------------------------
 ;Pop back all bitboards from stack
@@ -161,7 +169,9 @@ popGame:
 	pop qWord [whiteBishops]
 	pop qWord [whitePawns]
 
-	jmp afterGamePop
+	;jmp afterGamePop
+	sub rsp, 8*12
+	ret
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
@@ -245,16 +255,28 @@ loopfillWhiteBoard:
 	ret
 
 ;--------------------------------
-;Pawn movement AI, send it pawn
-; cx = 1 white
+;Push all posible moves into stack
+;also place num of posible moves in rax
 ;--------------------------------
-pawnMove:
-	;cmp cx, 1		;if dd then white
+getMoves:
+	call pawnMoves	;figure out pawn moves
+	ret
+
+
+;--------------------------------
+;Pawn movement AI, send it pawn
+; rcx = 1 white	player
+; rcx = -1 black player
+;--------------------------------
+pawnMoves:
+	;cmp rcx, 1		;if dd then white
 	;jne blackPawn
+	mov rcx, [whitePawns]
 whitePawn:
 	push rcx		;save original pawns place
 	shl rcx, 0x8		;check one move forward
 
+	call fillWhiteBoard
 	mov rax, [whiteBoard]
 	not rax
 	and rcx, rax
@@ -263,8 +285,14 @@ whitePawn:
 	cmp rcx, 0		;if not posible move we are done
 	je donePawnMove
 
-	xor [whitePawns], rax	;eliminate the pawn to move
-	xor [whitePawns], rcx	;make the pawnMove
+	mov rdx, [whitePawns]
+	xor rdx, rax		;eliminate the pawn to move
+	xor rdx, rcx		;make the pawnMove
+
+	push whitePawns
+	push rdx
+	add rsp, 2 * 8		;realign stack pointer
+
 	jmp donePawnMove
 blackPawn:
 	call fillBlackBoard
