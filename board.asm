@@ -51,23 +51,30 @@ aiMove:
 ;---------
 ;Expects depth in cl
 ;--------------------------------------
-
 ;Upper negaMax gets score for every current move on one side
 ai:
 	xor rax, rax	;what piece's move we are on
+	xor rcx, rcx	;hold higest move score
 	call getMoves
 loopAI:
-	
-	;call pushGame
-	;sub rsp, 8*12
-
-	;call depthNega	;get depth score for that move
-	
-	;call popGame
-	;add rsp, 8*12
-	
-	dec rax
-	cmp rax, 0
+	call pushGame	;save current game state
+	sub rsp, 8*12	
+	sub rsp, 8*12	;align sp to top of move to pop
+	call popGame	;pop the game to that move from getMoves
+	push rax
+	inc rsp
+	call depthNega	;get depth score for that move
+	cmp rax, rcx
+	jg continueLoopAI
+	mov rcx, rax	;store greater score
+continueLoopAI:
+	dec rsp
+	pop rax
+	add rsp, 8*12	;align sp to top of that move
+	call popGame	;undo moves
+	add rsp, 8*12
+	dec rax		;dec loop
+	cmp rax, 0	
 	je doneAI
 doneAI:
 	ret
@@ -75,53 +82,25 @@ doneAI:
 ;search deep to find the best move
 depthNega:
 	cmp cl, 0
-	je doneAi	;reached bottom of our search tree
+	je doneNega	;reached bottom of our search tree
 	dec cl		;dec tree search depth
-
 	mov rax, -300	;worse case score
-
 			;check moves for all unique piece types on given side
 	mov dl, 0	
 allMoves:		;loop over all players posible moves
-	inc dl		;move to next piece type to check
-
-			;do move				
-
-nextOfSamePieceType:	;continue for same piece type
-	;swap player
-	push rax
-	mov al, ch
-	imul rax, -1	
-	mov ch, al
-	pop rax
-
-	;push all bitboards
-	;jmp pushGame	
-afterGamePush:
-
+			;do moves				
 	push rax	;push score
 	call depthNega	;recurse
 	pop rbx		;pop last max
-
-	;restore all bitboards
-	;jmp popGame	
-afterGamePop:
+			;restore all bitboards
 			;undo move
-
 	imul rbx, -1	;negate returned value from eval 
-	cmp rbx, rax	;is new score (rbx) higher?
+	cmp rax,rbx	;is new score (rbx) higher?
 	jg swapMaxScore
-	jmp nextMove
 swapMaxScore:
 	mov rax, rbx	;swap max with score
-			;store the best mov
-nextMove:
-
-	cmp dl, 12
-	jne allMoves
-doneAi:
-	mov rbx, whitePawns	;this needs to be dynamic
-	call eval		;get an evaluation
+doneNega:
+	;call eval		;get an evaluation
 	ret			;done
 
 
@@ -271,30 +250,36 @@ getMoves:
 pawnMoves:
 	;cmp rcx, 1		;if dd then white
 	;jne blackPawn
-	mov rcx, [whitePawns]
-whitePawn:
-	push rcx		;save original pawns place
-	shl rcx, 0x8		;check one move forward
+
+	mov rdx, [whitePawns]
+	popcnt rcx, [whitePawns]
+	xor rax, rax		;loop counter
+whitePawn:			;moves for eachPawn 
+	push rcx		;push num of white pawn 
+	push rax
+	push rdx		;save original pawns place
+	shl rdx, 0x8		;check one move forward
 
 	call fillWhiteBoard
 	mov rax, [whiteBoard]
 	not rax
-	and rcx, rax
+	and rdx, rax
 	pop rax			;get original pawn pos back in rax
 
-	cmp rcx, 0		;if not posible move we are done
+	cmp rdx, 0		;if not posible move we are done
 	je donePawnMove
 
-	mov rdx, [whitePawns]
-	xor rdx, rax		;eliminate the pawn to move
-	xor rdx, rcx		;make the pawnMove
+	push qWord [whitePawns] ;save the current pawns
+	xor [whitePawns], rax	;eliminate the pawn to move
+	xor [whitePawns], rcx	;make the pawnMove
+	call pushGame		;same the game move for the ai
+	pop qWord [whitePawns]  ;retore them
 
-	push whitePawns
-	push rdx
-	add rsp, 2 * 8		;realign stack pointer
-
-	jmp donePawnMove
-blackPawn:
-	call fillBlackBoard
 donePawnMove:
+	pop rax			;pop loop counter
+	pop rcx			;pop num of pawns
+
+	inc rax
+	cmp rax, rcx
+	jle whitePawn
 	ret			;end pawn move
