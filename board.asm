@@ -52,7 +52,21 @@ aiMove:
 ;---------
 ;Expects depth in cl
 ;--------------------------------------
+
+;Upper negaMax gets score for every current move on one side
 ai:
+	mov dh, 0	;loop for all the piece types on one side
+loopAI:
+	call depthNega	;get depth score for that move
+	
+	inc dh
+	cmp dh, 6
+	je doneAI
+doneAI:
+	ret
+
+;search deep to find the best move
+depthNega:
 	cmp cl, 0
 	je doneAi	;reached bottom of our search tree
 	dec cl		;dec tree search depth
@@ -79,7 +93,7 @@ nextOfSamePieceType:	;continue for same piece type
 afterGamePush:
 
 	push rax	;push score
-	call ai		;recurse
+	call depthNega	;recurse
 	pop rbx		;pop last max
 
 	;restore all bitboards
