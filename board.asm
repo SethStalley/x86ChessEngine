@@ -4,7 +4,9 @@ extern	printf
 section .data
 	printH		db	"%016llx",10,0	;print in hex 64bit
 	printD		db	"%d",10,0	;print normal decimal
+	printNoSpace	db	"%d",0		;print normal decimal
 	printHere	db	"Here",10,0	;test msg
+	nwln		db	10,0		;new line
 
 	aiDepth		db	2	;depth for negaMax tree
 	aiPlayer	db 	1	;if ai is black/white default black
@@ -24,7 +26,7 @@ section .data
 	whiteQueens 	dq 	0x8
 	whiteKing 	dq 	0x10
 
-							;bitboards for black
+					;bitboards for black
 	blackPawns  	dq 	0xff000000000000
 	blackBishops 	dq 	0x2400000000000000
 	blackKnights 	dq 	0x4200000000000000
@@ -37,23 +39,76 @@ section .bss
 section .text
 aiMove:
 	;set depth and player
-	mov cl, [aiDepth]
-	mov ch, [aiPlayer]
-	mov [curPlayer], ch
-	mov [curDepth], cl
-	call ai
+	mov rax, [whitePawns]
+	call printBitMap
+	;mov cl, [aiDepth]
+	;mov ch, [aiPlayer]
+	;mov [curPlayer], ch
+	;mov [curDepth], cl
+	;call getMoves
+	;call ai
 	ret
 
 print:			;print rax for testing
+	push rax
+	push rcx	;printf used this save it
 	push rsi
 	push rdi
 	mov rsi,rax
-	mov edi, printD
+	mov rdi, printD
+	xor rax, rax
 	call printf
 	pop rdi
 	pop rsi
+	pop rcx
+	pop rax
 	ret
-	
+
+printSpace:
+	push rsi
+	push rax
+	push rcx
+	mov edi, nwln
+	xor rax, rax
+	call printf
+	pop rcx
+	pop rax
+	pop rsi
+	ret
+
+printBitMap:		;print a bitmap stored in rax
+	xor rcx, rcx
+	mov rsi, 0x8000000000000000
+printBitMapFiles:
+	cmp ch, 8
+	je donePrintBitMap
+	call printSpace
+	inc ch
+	xor cl, cl
+printBitMapColums:
+	cmp cl, 8
+	je printBitMapFiles
+	inc cl
+	push rsi
+	push rcx
+	push rax
+	and rsi, rax		;is this bit on
+	mov rax, rsi
+	cmp rsi, 0
+	je showBit
+	mov rsi, 1
+showBit:
+	mov rdi, printNoSpace
+	xor rax, rax
+	call printf
+	pop rax
+	pop rcx
+	pop rsi
+	shr rsi, 1
+	jmp printBitMapColums
+donePrintBitMap:
+	call printSpace
+	ret
 
 ;--------------------------------------
 ;NegaMax Procedure
@@ -68,7 +123,6 @@ ai:
 	xor rax, rax	;what piece's move we are on
 	xor rcx, rcx	;hold higest move score
 	call getMoves	;does moves and gets # of them - in stack
-	;call print
 loopAI:
 	call pushGame	;save current game state
 	sub rsp, 8*12	
@@ -85,8 +139,9 @@ continueLoopAI:
 	call popGame	;undo moves
 	add rsp, 8*12
 	dec rax		;dec loop
+	;call print
 	cmp rax, 0	
-	je doneAI
+	jne loopAI
 doneAI:
 	ret
 
@@ -275,33 +330,35 @@ getMoves:
 ;--------------------------------
 pawnMoves:
 	mov rdx, [whitePawns]
-	popcnt rcx, [whitePawns]
-	xor rax, rax		;loop counter
+	mov rax, 0x1
+	xor rcx, rcx
 whitePawn:			;moves for eachPawn 
-	push rcx		;push num of white pawn 
-	push rax
-	push rdx		;save original pawns place
-	shl rdx, 0x8		;check one move forward
-
+	cmp rax,0x0		;if we check all the bits
+	je donePawnMove		;check for all pawns
+	push rax		;save bit being checked
+	and rax, rdx		;if there is a pawn there
+	cmp rax, 0
+	je nextPawn		;check next poss for pawn
+	
+	not rax			;not our move
+	and rdx, rax		;remove current pawn position
+	not rax			;get move back
+	shl rax, 0x8		;move pawn one foward
 	call fillWhiteBoard
-	mov rax, [whiteBoard]
-	not rax
-	and rdx, rax
-	pop rax			;get original pawn pos back in rax
-
-	cmp rdx, 0		;if not posible move we are done
-	je donePawnMove
-
+	xor rax, qWord [whiteBoard]	;if piece here we can't move there
+	cmp rax, 0
+	je nextPawn
+	
+	inc rcx			;pawn move is valid inc move counter
+	or rdx, rax		;apply the move to the pawn's bitmap
 	push qWord [whitePawns] ;save the current pawns
-	xor [whitePawns], rax	;eliminate the pawn to move
-	xor [whitePawns], rcx	;make the pawnMove
-	call pushGame		;same the game move for the ai
-	pop qWord [whitePawns]  ;retore them
-
+	mov [whitePawns], rdx	;make the pawnMove
+	call pushGame		;save the game move for the ai
+	pop qWord [whitePawns]  ;restore them to check other pawn
+nextPawn:
+	pop rax
+	shl rax, 1		;check next poss for pawn
+	jmp whitePawn		;loop
 donePawnMove:
-	pop rax			;pop loop counter
-	pop rcx			;pop num of pawns
-	inc rax
-	cmp rax, rcx
-	jl whitePawn
+	mov rax, rcx		;return number of pawn moves
 	ret			;end pawn move
