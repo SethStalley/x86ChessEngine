@@ -9,6 +9,10 @@ section .data
 	aiDepth		db	2	;depth for negaMax tree
 	aiPlayer	db 	1	;if ai is black/white default black
 
+	curDepth	db 	0	;used by negaMax during loop
+	curPlayer	db 	0
+	curScore	dw 	0	;used by negamax for score keepin
+
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
 
@@ -37,9 +41,11 @@ aiMove:
 	;mov rax, [whitePawns]
 	;call calcMove
 
-	;testing ai
-	mov ch, [aiPlayer]					;which player is ai
-	mov cl, [aiDepth]					;depth for negamax to check moves
+	;set depth and player
+	mov cl, [aiDepth]
+	mov ch, [aiPlayer]
+	mov [curPlayer], ch
+	mov [curDepth], cl
 	call ai
 	ret
 
@@ -55,20 +61,18 @@ aiMove:
 ai:
 	xor rax, rax	;what piece's move we are on
 	xor rcx, rcx	;hold higest move score
-	call getMoves
+	call getMoves	;does moves and gets # of them - in stack
 loopAI:
 	call pushGame	;save current game state
 	sub rsp, 8*12	
 	sub rsp, 8*12	;align sp to top of move to pop
 	call popGame	;pop the game to that move from getMoves
 	push rax
-	inc rsp
 	call depthNega	;get depth score for that move
 	cmp rax, rcx
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
 continueLoopAI:
-	dec rsp
 	pop rax
 	add rsp, 8*12	;align sp to top of that move
 	call popGame	;undo moves
@@ -81,27 +85,32 @@ doneAI:
 
 ;search deep to find the best move
 depthNega:
-	cmp cl, 0
+	cmp [curDepth], byte 0
 	je doneNega	;reached bottom of our search tree
-	dec cl		;dec tree search depth
-	mov rax, -300	;worse case score
-			;check moves for all unique piece types on given side
-	mov dl, 0	
+	dec byte [curDepth]	;dec tree search depth
+	mov [curScore], word -300	;worse case score
+	call getMoves	;check moves for all unique piece types on given side
 allMoves:		;loop over all players posible moves
+	push rax
 			;do moves				
-	push rax	;push score
+	push word [curScore]
 	call depthNega	;recurse
-	pop rbx		;pop last max
+	pop bx		;pop last max score
 			;restore all bitboards
 			;undo move
-	imul rbx, -1	;negate returned value from eval 
-	cmp rax,rbx	;is new score (rbx) higher?
-	jg swapMaxScore
+	imul bx, -1	;negate returned value from eval 
+	cmp [curScore],bx	;is new score (rbx) higher?
+	jng nextMove
 swapMaxScore:
-	mov rax, rbx	;swap max with score
+	mov [curScore], bx	;swap max with score
+nextMove:
+	pop rax
+	dec rax
+	cmp rax, 0
+	jne allMoves
 doneNega:
-	;call eval		;get an evaluation
-	ret			;done
+	call eval	;get an evaluation
+	ret		;done
 
 
 ;-------------------------------
@@ -154,7 +163,6 @@ popGame:
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
-;Expects address of pawn's bitboard of player to eval in rbx!
 ;Sned player to evar in rcx, 1 = white | -1 = black
 ;------------------
 ;values:
@@ -165,6 +173,8 @@ popGame:
 ;king = 200
 ;-------------------------------
 eval:
+	push rbx
+	mov rbx, whitePawns		;address of white pawns
 	push rcx
 	popcnt rax, [rbx]		;count how many bits are on
 	popcnt rcx, [rbx+8]		;bishop bitBoard
@@ -183,6 +193,7 @@ eval:
 	imul rcx, 200			;king's value
 	add rax, rcx
 	pop rcx
+	pop rbx
 
 	push rdx
 	xor edx, edx
@@ -281,5 +292,5 @@ donePawnMove:
 
 	inc rax
 	cmp rax, rcx
-	jle whitePawn
+	jl whitePawn
 	ret			;end pawn move
