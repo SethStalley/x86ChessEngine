@@ -39,8 +39,7 @@ section .bss
 section .text
 aiMove:
 	;set depth and player
-	mov rax, [whitePawns]
-	call printBitMap
+	call pawnMoves
 	;mov cl, [aiDepth]
 	;mov ch, [aiPlayer]
 	;mov [curPlayer], ch
@@ -329,10 +328,10 @@ getMoves:
 ; rcx = -1 black player
 ;--------------------------------
 pawnMoves:
-	mov rdx, [whitePawns]
-	mov rax, 0x1
+	mov rax, 0x8000000000000000
 	xor rcx, rcx
 whitePawn:			;moves for eachPawn 
+	mov rdx, [whitePawns]
 	cmp rax,0x0		;if we check all the bits
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
@@ -345,19 +344,21 @@ whitePawn:			;moves for eachPawn
 	not rax			;get move back
 	shl rax, 0x8		;move pawn one foward
 	call fillWhiteBoard
-	xor rax, qWord [whiteBoard]	;if piece here we can't move there
+	not qWord [whiteBoard]
+	and rax, qWord [whiteBoard]	;if piece here we can't move there
 	cmp rax, 0
 	je nextPawn
 	
 	inc rcx			;pawn move is valid inc move counter
 	or rdx, rax		;apply the move to the pawn's bitmap
 	push qWord [whitePawns] ;save the current pawns
+	not qWord [whiteBoard]
 	mov [whitePawns], rdx	;make the pawnMove
 	call pushGame		;save the game move for the ai
 	pop qWord [whitePawns]  ;restore them to check other pawn
 nextPawn:
 	pop rax
-	shl rax, 1		;check next poss for pawn
+	shr rax, 1		;check next poss for pawn
 	jmp whitePawn		;loop
 donePawnMove:
 	mov rax, rcx		;return number of pawn moves
