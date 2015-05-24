@@ -1,6 +1,8 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
@@ -17,7 +19,8 @@ gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
     GtkWidget* button;
     GtkLayout* label;
     GtkEntry* entry;
-
+    char path[1024]; //img folder path
+    char tempPath[1024];
 
 void createWindow(){
     
@@ -37,7 +40,8 @@ void createWindow(){
     layout = gtk_layout_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER (window), layout);
     
-    image = gtk_image_new_from_file("/home/ignacio/Pictures/chessBoard.svg");
+	strcpy(tempPath, path);
+    image = gtk_image_new_from_file(strcat(tempPath, "chessBoard.svg"));
     gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
 
 }
@@ -48,53 +52,54 @@ void addPieces(){
 	int position = i;
 	int x = ((i%8) * 100) + 20;
 	int y = (abs((i/8)-7) * 100) + 20;
+	strcpy(tempPath, path);
         switch(board[i]){
         case 1:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wpawn.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wpawn.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);    
             break;
         case 2:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wbishop.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wbishop.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 3:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wknight.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wknight.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 4:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wrook.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wrook.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 5:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wqueen.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wqueen.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 6:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/wking.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "wking.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 7:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/bpawn.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "bpawn.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 8:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/bbishop.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "bbishop.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 9:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/bknight.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "bknight.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 10:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/brook.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "brook.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 11:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/bqueen.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "bqueen.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
 	case 12:
-            image = gtk_image_new_from_file("/home/ignacio/Pictures/bking.png");
+            image = gtk_image_new_from_file(strcat(tempPath, "bking.png"));
             gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
 	    break;
         }
@@ -128,6 +133,11 @@ void callback( GtkWidget *widget,
 int main( int   argc,
           char *argv[] )
 {
+	//get running dir put in swd
+   	getcwd(path, sizeof(path));
+	strcat(path, "/img/");
+
+
     gtk_init (&argc, &argv);
     createWindow();
     int i;
