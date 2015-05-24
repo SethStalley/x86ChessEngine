@@ -36,11 +36,6 @@ section .bss
 	resb 1024
 section .text
 aiMove:
-	;call fillWhiteBoard
-
-	;mov rax, [whitePawns]
-	;call calcMove
-
 	;set depth and player
 	mov cl, [aiDepth]
 	mov ch, [aiPlayer]
@@ -48,6 +43,17 @@ aiMove:
 	mov [curDepth], cl
 	call ai
 	ret
+
+print:			;print rax for testing
+	push rsi
+	push rdi
+	mov rsi,rax
+	mov edi, printD
+	call printf
+	pop rdi
+	pop rsi
+	ret
+	
 
 ;--------------------------------------
 ;NegaMax Procedure
@@ -62,6 +68,7 @@ ai:
 	xor rax, rax	;what piece's move we are on
 	xor rcx, rcx	;hold higest move score
 	call getMoves	;does moves and gets # of them - in stack
+	;call print
 loopAI:
 	call pushGame	;save current game state
 	sub rsp, 8*12	
@@ -92,10 +99,18 @@ depthNega:
 	call getMoves	;check moves for all unique piece types on given side
 allMoves:		;loop over all players posible moves
 	push rax
-			;do moves				
+	;do moves
+	call pushGame	;save current game state
+	sub rsp, 8*12	
+	sub rsp, 8*12	
+	call popGame	;pop the game to that move from getMoves
+	;recurse
 	push word [curScore]
 	call depthNega	;recurse
 	pop bx		;pop last max score
+	add rsp, 8*12	;align sp to top of that move
+	call popGame	;undo moves
+	add rsp, 8*12
 			;restore all bitboards
 			;undo move
 	imul bx, -1	;negate returned value from eval 
@@ -259,9 +274,6 @@ getMoves:
 ; rcx = -1 black player
 ;--------------------------------
 pawnMoves:
-	;cmp rcx, 1		;if dd then white
-	;jne blackPawn
-
 	mov rdx, [whitePawns]
 	popcnt rcx, [whitePawns]
 	xor rax, rax		;loop counter
@@ -289,7 +301,6 @@ whitePawn:			;moves for eachPawn
 donePawnMove:
 	pop rax			;pop loop counter
 	pop rcx			;pop num of pawns
-
 	inc rax
 	cmp rax, rcx
 	jl whitePawn
