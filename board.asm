@@ -11,6 +11,8 @@ section .data
 	curPlayer	db 	0
 	curScore	dw 	0	;used by negamax for score keepin
 
+	numMovs	 	dq	0	;num of moves for a certain piece
+
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
 
@@ -35,6 +37,7 @@ section .bss
 section .text
 aiMove:
 	;set depth and player
+	mov rcx, 1
 	call pawnMoves
 	;mov cl, [aiDepth]
 	;mov ch, [aiPlayer]
@@ -212,17 +215,15 @@ eval:
 fillBlackBoard:
 	push rax
 	push rcx
-	push rbx
-	mov rcx, 6
+	mov rcx, 5
 	mov rbx, blackPawns			;start of black bitboards address
 	xor rax, rax
 loopfillBlackBoard:				;loop through the bitboards
-	or rax, [rbx + rcx * 8]
+	or rax, [blackPawns + rcx * 8]	
 	dec rcx
 	cmp rcx, 0
-	jne loopfillBlackBoard
+	jnl loopfillBlackBoard
 	mov [blackBoard], rax
-	pop rbx
 	pop rcx
 	pop rax
 	ret
@@ -233,17 +234,14 @@ loopfillBlackBoard:				;loop through the bitboards
 fillWhiteBoard:					;same as fillBlackBoard but white
 	push rax
 	push rcx
-	push rbx
-	mov rcx, 6
-	mov rbx, whitePawns
+	mov rcx, 5
 	xor rax, rax
 loopfillWhiteBoard:
-	or rax, [rbx + rcx * 8]
+	or rax, [whitePawns + rcx * 8]
 	dec rcx
 	cmp rcx, 0
-	jne loopfillWhiteBoard
+	jnl loopfillWhiteBoard
 	mov [whiteBoard], rax
-	pop rbx
 	pop rcx
 	pop rax
 	ret
@@ -263,16 +261,19 @@ getMoves:
 ; rcx = -1 black player
 ;--------------------------------
 pawnMoves:
+	;push rsi
 	mov rax, 0x8000000000000000
-	xor rcx, rcx
-whitePawn:			;moves for eachPawn 
+	mov qWord [numMovs], 0	;set move counter in 0
+	cmp rcx, 1		;what player are we?
+	jne blackPawn
+whitePawn:			;moves for white pawn
 	mov rdx, [whitePawns]
 	cmp rax,0x0		;if we check all the bits
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
 	and rax, rdx		;if there is a pawn there
 	cmp rax, 0
-	je nextPawn		;check next poss for pawn
+	je nextWPawn		;check next poss for pawn
 	
 	not rax			;not our move
 	and rdx, rax		;remove current pawn position
@@ -282,19 +283,52 @@ whitePawn:			;moves for eachPawn
 	not qWord [whiteBoard]
 	and rax, qWord [whiteBoard]	;if piece here we can't move there
 	cmp rax, 0
-	je nextPawn
+	je nextWPawn
 	
 	inc rcx			;pawn move is valid inc move counter
 	or rdx, rax		;apply the move to the pawn's bitmap
 	push qWord [whitePawns] ;save the current pawns
 	not qWord [whiteBoard]
 	mov [whitePawns], rdx	;make the pawnMove
-	call pushGame		;save the game move for the ai	
+	call pushGame		;save the game move for the ai
 	pop qWord [whitePawns]  ;restore them to check other pawn
-nextPawn:
+nextWPawn:
 	pop rax
 	shr rax, 1		;check next poss for pawn
 	jmp whitePawn		;loop
+	jmp donePawnMove
+
+blackPawn:			;same but for each Black pawn		
+	mov rdx, [blackPawns]
+	cmp rax,0x0		;if we check all the bits
+	je donePawnMove		;check for all pawns
+	push rax		;save bit being checked
+	and rax, rdx		;if there is a pawn there
+	cmp rax, 0
+	je nextBPawn		;check next poss for pawn
+
+	not rax			;not our move
+	and rdx, rax		;remove current pawn position
+	not rax			;get move back
+	shr rax, 0x8		;move pawn one foward
+
+	call fillBlackBoard
+	not qWord [blackBoard]
+	and rax, qWord [blackBoard]	;if piece here we can't move there
+	cmp rax, 0
+	je nextBPawn
+	
+	inc rcx			;pawn move is valid inc move counter
+	or rdx, rax		;apply the move to the pawn's bitmap
+	push qWord [blackPawns] ;save the current pawns
+	not qWord [blackBoard]
+	mov [blackPawns], rdx	;make the pawnMove
+	call pushGame		;save the game move for the ai	
+	pop qWord [blackPawns]  ;restore them to check other pawn
+nextBPawn:
+	pop rax
+	shr rax, 1		;check next poss for pawn
+	jmp blackPawn		;loop
 donePawnMove:
 	mov rax, rcx		;return number of pawn moves
 	ret			;end pawn move

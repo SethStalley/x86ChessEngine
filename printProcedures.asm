@@ -37,6 +37,7 @@ printSpace:
 	ret
 
 printBitMap:		;print a bitmap stored in rax
+	push rcx
 	xor rcx, rcx
 	mov rsi, 0x8000000000000000
 printBitMapFiles:
@@ -68,4 +69,5 @@ showBit:
 	jmp printBitMapColums
 donePrintBitMap:
 	call printSpace
+	pop rcx
 	ret
