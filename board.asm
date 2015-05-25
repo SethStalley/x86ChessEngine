@@ -37,8 +37,7 @@ section .bss
 	moves		resq	8*12*67000	;store game states here
 section .text
 aiMove:
-	call pawnMoves
-	;call ai
+	call ai
 	ret
 
 ;--------------------------------------
@@ -55,16 +54,13 @@ ai:
 	mov rcx, -300
 	call getMoves	;does moves and gets # of them - in stack
 loopAI:	;loop all moves for ai player
+	push rax	;store loop counter
 	;call pushGame	;save current game state
-	;sub rsp, 8*12	
-	sub rsp, 8*12	;align sp to top of move to pop
 	call popGame	;pop the game to that move from getMoves
-	add rsp, 8*12
+	;set depth and player
 	push rax
 	mov rax, [whitePawns]
 	call printBitMap
-	;set depth and player
-	push rax
 	mov rax, [aiDepth]
 	mov [curDepth], rax
 	mov rax, [aiPlayer]
@@ -77,9 +73,7 @@ loopAI:	;loop all moves for ai player
 	mov rcx, rax	;store greater score
 continueLoopAI:
 	pop rax
-	;add rsp, 8*12	;align sp to top of that move
 	;call popGame	;undo moves
-	;add rsp, 8*12
 	dec rax		;dec loop
 	cmp rax, 0	
 	jne loopAI
@@ -361,9 +355,6 @@ whitePawn:			;moves for white pawn
 	not qWord [whiteBoard]
 	mov [whitePawns], rdx	;make the pawnMove
 	call pushGame		;save the game move for the ai
-	call popGame
-	mov rax, [whitePawns]
-	call printBitMap
 	pop qWord [whitePawns]  ;restore them to check other pawn
 nextWPawn:
 	pop rax
