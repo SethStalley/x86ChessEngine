@@ -37,8 +37,7 @@ section .bss
 section .text
 aiMove:
 	;set depth and player
-	mov rcx, 1
-	call pawnMoves
+	;call pawnMoves
 	;mov cl, [aiDepth]
 	;mov ch, [aiPlayer]
 	;mov [curPlayer], ch
@@ -76,7 +75,6 @@ continueLoopAI:
 	call popGame	;undo moves
 	add rsp, 8*12
 	dec rax		;dec loop
-	;call print
 	cmp rax, 0	
 	jne loopAI
 doneAI:
@@ -261,10 +259,11 @@ getMoves:
 ; rcx = -1 black player
 ;--------------------------------
 pawnMoves:
-	;push rsi
+	push rcx
+	xor rcx, rcx
 	mov rax, 0x8000000000000000
 	mov qWord [numMovs], 0	;set move counter in 0
-	cmp rcx, 1		;what player are we?
+	cmp byte [curPlayer], 1	;what player are we?
 	jne blackPawn
 whitePawn:			;moves for white pawn
 	mov rdx, [whitePawns]
@@ -331,4 +330,5 @@ nextBPawn:
 	jmp blackPawn		;loop
 donePawnMove:
 	mov rax, rcx		;return number of pawn moves
+	pop rcx
 	ret			;end pawn move
