@@ -20,9 +20,12 @@ Running
 ====
 `make && ./Chess`
 
-  
+LICENSE
+==== 
+MIT: http://rem.mit-license.org   
+
 ----
-*Computer Architecture Project*    
-*Instituto Tecnológico de Costa Rica*
+Computer Architecture Project  
+@Instituto Tecnológico de Costa Rica
 
   
