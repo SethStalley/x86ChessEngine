@@ -15,6 +15,7 @@ What To Do:
  * Move from NegaMax to Alpha-Beta AI  
  * Decrease memory usage when moving/undoing moves 
  * Add GUI move verification, and user msg's
+ * Add opening book
   
 Running  
 ====
