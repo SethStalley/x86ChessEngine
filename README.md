@@ -26,6 +26,7 @@ What To Do:
  * Decrease memory usage when moving/undoing moves 
  * Add GUI move verification, and user msg's
  * Add opening book
+ * Improve eval by adding positioning weight
   
 Running  
 ====
