@@ -1,18 +1,32 @@
 global aiMove
+global whitePawns
+global whiteBishops
+global whiteKnights
+global whiteCastles
+global whiteQueens
+global whiteKing
+global blackPawns
+global blackBishops
+global blackKnights
+global blackCastles
+global blackQueens
+global blackKing
+
 extern print
 extern printSpace
 extern printBitMap
+extern pushGame
+extern popGame
 
 section .data
-	aiDepth		db	2	;depth for negaMax tree
-	aiPlayer	db 	1	;if ai is black/white default black
+	aiDepth		dq	1	;depth for negaMax tree
+	aiPlayer	dq 	1	;if ai is black/white default black
 
 	curDepth	dq 	0	;used by negaMax during loop
 	curPlayer	dq 	1
 	curScore	dq 	0	;used by negamax for score keepin
 
 	numMovs	 	dq	0	;num of moves for a certain piece
-	lastMovA	dq	moves	;last game push move address
 
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
@@ -24,7 +38,6 @@ section .data
 	whiteCastles 	dq 	0x81
 	whiteQueens 	dq 	0x8
 	whiteKing 	dq 	0x10
-
 					;bitboards for black
 	blackPawns  	dq 	0xff000000000000
 	blackBishops 	dq 	0x2400000000000000
@@ -33,8 +46,6 @@ section .data
 	blackQueens 	dq 	0x800000000000000
 	blackKing    	dq	0x1000000000000000
 
-section .bss
-	moves		resq	8*12*67000	;store game states here
 section .text
 aiMove:
 	call ai
@@ -58,16 +69,12 @@ loopAI:	;loop all moves for ai player
 	;call pushGame	;save current game state
 	call popGame	;pop the game to that move from getMoves
 	;set depth and player
-	push rax
-	mov rax, [whitePawns]
-	call printBitMap
 	mov rax, [aiDepth]
 	mov [curDepth], rax
 	mov rax, [aiPlayer]
-	mov [curPlayer], rax
-	pop rax
+	mov [curPlayer], rax	
 	;get score
-	;call depthNega	;get depth score for that move
+	call depthNega	;get depth score for that move
 	cmp rax, rcx
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
@@ -85,151 +92,39 @@ depthNega:
 	cmp qWord [curDepth],  0
 	je doneNega	;reached bottom of our search tree
 	dec qWord [curDepth]	;dec tree search depth
-	mov qWord [curScore], -300	;worse case score
+	mov qWord [curScore], -300	;large worse case score
 	call getMoves	;check moves for all unique piece types on given side
+	mov rcx, rax
 allMoves:		;loop over all players posible moves
-	push rax
 	;do moves
-	call pushGame	;save current game state
-	sub rsp, 8*12	
-	sub rsp, 8*12	
 	call popGame	;pop the game to that move from getMoves
-	;recurse
-	push qWord [curScore]
 	;change PLayer
-	push rax
-	xor rax, rax
 	mov rax, [curPlayer]
 	imul rax, -1
-	cmp rax, 1
-	jne nothing
-	call print
-nothing:
 	mov [curPlayer], rax
-	pop rax
 	;recurse
 	call depthNega	;recurse
-	pop bx		;pop last max score
-	add rsp, 8*12	;align sp to top of that move
-	call popGame	;undo moves
-	add rsp, 8*12
+			;pop last max score
 			;restore all bitboards
 			;undo move
-	imul rbx, -1	;negate returned value from eval 
-	cmp [curScore],rbx	;is new score (rbx) higher?
+	imul rax, -1	;negate returned value from eval 
+	;call print
+	cmp [curScore],rax	;is new score (rbx) higher?
 	jng nextMove
 swapMaxScore:
-	mov [curScore], rbx	;swap max with score
+	mov [curScore], rax	;swap max with score
 nextMove:
-	pop rax
-	dec rax
-	cmp rax, 0
+	dec rcx
+	cmp rcx, 0
 	jne allMoves
 doneNega:
-	call eval	;get an evaluation
+	mov rax, [curPlayer]
+	call print
+	;call eval	;get an evaluation
 	ret		;done
 
 
-;-------------------------------
-;Push all bitboard into stack
-;Negamax uses this to save game state
-;as it checks all moves
-;For every push we need to do a pop
-;-------------------------------
-pushGame:			;push all bitboards down into mov array
-	push rax
-	push rdx
-	mov rdx, [lastMovA]
-	mov rax, [whitePawns]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [whiteBishops]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [whiteKnights]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [whiteCastles]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [whiteQueens]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [whiteKing]
-	mov [rdx], rax
-	add rdx, 8
 
-	mov rax, [blackPawns]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [blackBishops]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [blackKnights]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [blackCastles]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [blackQueens]
-	mov [rdx], rax
-	add rdx, 8
-	mov rax, [blackKing]
-	mov [rdx], rax
-	add rdx, 8
-	mov [lastMovA], rdx
-	pop rdx
-	pop rax
-	ret
-
-;-------------------------------
-;Pop back all bitboards from stack
-;-------------------------------
-popGame:
-	push rax
-	push rdx
-	mov rdx, [lastMovA]
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackKing], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackQueens], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackCastles], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackKnights], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackBishops], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [blackPawns], rax
-
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whiteKing], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whiteQueens], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whiteCastles], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whiteKnights], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whiteBishops], rax
-	sub rdx, 8
-	mov rax, [rdx]
-	mov [whitePawns], rax
-	mov [lastMovA], rdx
-	pop rdx
-	pop rax
-	ret
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
@@ -244,8 +139,8 @@ popGame:
 ;-------------------------------
 eval:
 	push rbx
-	mov rbx, whitePawns		;address of white pawns
 	push rcx
+	mov rbx, whitePawns		;address of white pawns
 	popcnt rax, [rbx]		;count how many bits are on
 	popcnt rcx, [rbx+8]		;bishop bitBoard
 	imul rcx, 3			;bishop weight
@@ -265,11 +160,6 @@ eval:
 	pop rcx
 	pop rbx
 
-	push rdx
-	xor edx, edx
-	mov dl, ch			;what player side
-	imul rax, rdx			;mul by player color
-	pop rdx
 	ret							;end of procedure
 
 ;-------------------------------
