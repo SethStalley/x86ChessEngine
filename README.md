@@ -22,6 +22,6 @@ Running
 
 ----
 Computer Architecture Project  
-Instituto Tecnológico de Costa Rica - 2015
+*Instituto Tecnológico de Costa Rica*
 
   
