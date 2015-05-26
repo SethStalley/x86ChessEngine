@@ -3,15 +3,15 @@ x86ChessEngine
 
 A simple chess engine AI wrritten in LINUX NASM64 assembly  
 
-Features:  
+Features:
   * AI vs AI  
   * Human vs AI  
   * GTK GUI written in C  
     
-What doesn't Work:  
+What doesn't Work:
   * Everything :(  
   
-What To Do:  
+What To Do:
   * Move from NegaMax to Alpha-Beta AI  
   * Decrease memory usage when moving/undoing moves  
   
