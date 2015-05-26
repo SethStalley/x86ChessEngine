@@ -9,7 +9,17 @@ Features:
  * GTK GUI written in C  
     
 What doesn't Work:
- * Everything :(  
+ * Gui 
+ * bishops moves
+ * king moves
+ * queen moves
+ * knight moves
+ * castle moves
+ * castling
+ * pawn passant
+ * pawn promotion
+ * initial pawn doble move
+ * game starting connditions
   
 What To Do:
  * Move from NegaMax to Alpha-Beta AI  
