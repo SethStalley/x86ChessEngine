@@ -21,7 +21,7 @@ Running
 `make && ./Chess`
 
 ----
-Computer Architecture Project
+Computer Architecture Project  
 Instituto Tecnológico de Costa Rica - 2015
 
   
