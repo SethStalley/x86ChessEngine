@@ -17,9 +17,11 @@ extern printSpace
 extern printBitMap
 extern pushGame
 extern popGame
+extern pushWinningMove
+extern popWinningMove
 
 section .data
-	aiDepth		dq	1	;depth for negaMax tree
+	aiDepth		dq	2	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white default black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -49,6 +51,11 @@ section .data
 section .text
 aiMove:
 	call ai
+	call fillBlackBoard
+	call fillWhiteBoard
+	mov rax, [whiteBoard]
+	or rax, [blackBoard]
+	call printBitMap
 	ret
 
 ;--------------------------------------
@@ -66,7 +73,6 @@ ai:
 	call getMoves	;does moves and gets # of them - in stack
 loopAI:	;loop all moves for ai player
 	push rax	;store loop counter
-	;call pushGame	;save current game state
 	call popGame	;pop the game to that move from getMoves
 	;set depth and player
 	mov rax, [aiDepth]
@@ -74,10 +80,13 @@ loopAI:	;loop all moves for ai player
 	mov rax, [aiPlayer]
 	mov [curPlayer], rax	
 	;get score
+	call pushGame
 	call depthNega	;get depth score for that move
-	cmp rax, rcx
+	call popGame
+	cmp rcx, rax
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
+	call pushWinningMove
 continueLoopAI:
 	pop rax
 	;call popGame	;undo moves
@@ -85,10 +94,17 @@ continueLoopAI:
 	cmp rax, 0	
 	jne loopAI
 doneAI:
+	call popWinningMove ;do the move
 	ret
 
 ;search deep to find the best move
 depthNega:
+	;change PLayer
+	mov rax, [curPlayer]
+	imul rax, -1
+	mov [curPlayer], rax
+	;store rcx
+	push rcx
 	cmp qWord [curDepth],  0
 	je doneNega	;reached bottom of our search tree
 	dec qWord [curDepth]	;dec tree search depth
@@ -98,17 +114,17 @@ depthNega:
 allMoves:		;loop over all players posible moves
 	;do moves
 	call popGame	;pop the game to that move from getMoves
-	;change PLayer
-	mov rax, [curPlayer]
-	imul rax, -1
-	mov [curPlayer], rax
+
+	;print board state for debug
+	;call fillWhiteBoard
+	;call fillBlackBoard
+	;mov rax, [whiteBoard]
+	;or rax, [blackBoard]
+	;call printBitMap
+
 	;recurse
 	call depthNega	;recurse
-			;pop last max score
-			;restore all bitboards
-			;undo move
 	imul rax, -1	;negate returned value from eval 
-	;call print
 	cmp [curScore],rax	;is new score (rbx) higher?
 	jng nextMove
 swapMaxScore:
@@ -119,8 +135,8 @@ nextMove:
 	jne allMoves
 doneNega:
 	mov rax, [curPlayer]
-	call print
-	;call eval	;get an evaluation
+	call eval	;get an evaluation
+	pop rcx
 	ret		;done
 
 
@@ -140,7 +156,13 @@ doneNega:
 eval:
 	push rbx
 	push rcx
+	cmp qWord [curPlayer], 1
+	jne evalBlack
 	mov rbx, whitePawns		;address of white pawns
+	jmp whiteEval
+evalBlack:
+	mov rbx, blackPawns
+whiteEval:
 	popcnt rax, [rbx]		;count how many bits are on
 	popcnt rcx, [rbx+8]		;bishop bitBoard
 	imul rcx, 3			;bishop weight
@@ -157,6 +179,8 @@ eval:
 	popcnt rcx, [rbx+40]		;still have a king?
 	imul rcx, 200			;king's value
 	add rax, rcx
+	mov rcx, [curPlayer]
+	imul rax, rcx			;negate score if black
 	pop rcx
 	pop rbx
 
