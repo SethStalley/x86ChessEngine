@@ -25,7 +25,7 @@ section .data
 	aiPlayer	dq 	1	;if ai is black/white default black
 
 	curDepth	dq 	0	;used by negaMax during loop
-	curPlayer	dq 	1
+	curPlayer	dq 	0
 	curScore	dq 	0	;used by negamax for score keepin
 
 	numMovs	 	dq	0	;num of moves for a certain piece
@@ -33,6 +33,10 @@ section .data
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
 
+	boardBuffer 	dq	0x0	;used as temporary move storage
+	;used to check if piece is on an edge
+	leftEdge	dq	0x101010101010101
+	rightEdge	dq	0x8080808080808080
 					;bitboards for white
 	whitePawns 	dq 	0xff00
 	whiteBishops 	dq	0x24
@@ -51,6 +55,7 @@ section .data
 section .text
 aiMove:
 	call ai
+	;call getMoves
 	call fillBlackBoard
 	call fillWhiteBoard
 	mov rax, [whiteBoard]
@@ -68,6 +73,8 @@ aiMove:
 ;--------------------------------------
 ;Upper negaMax gets score for every current move on one side
 ai:
+	mov rcx, [aiPlayer]
+	mov [curPlayer], rcx
 	xor rcx, rcx	;hold higest move score
 	mov rcx, -300
 	call getMoves	;does moves and gets # of them - in stack
@@ -139,9 +146,6 @@ doneNega:
 	pop rcx
 	ret		;done
 
-
-
-
 ;-------------------------------
 ;Evaluates a players side against the oposite
 ;Sned player to evar in rcx, 1 = white | -1 = black
@@ -184,7 +188,49 @@ whiteEval:
 	pop rcx
 	pop rbx
 
-	ret							;end of procedure
+	ret				;end of procedure
+
+;-------------------------------
+;when white attack happens remove
+;the black piece from board
+;-------------------------------
+removePiece:
+	push rbx
+	push rcx
+	cmp qWord [curPlayer], 1
+	jne whiteRemove
+	;remove black piece
+	mov rbx, blackPawns
+	jmp beginRemoval
+whiteRemove:
+	mov rbx, whitePawns
+beginRemoval:
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	add rbx, 8
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	add rbx, 8
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	add rbx, 8
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	add rbx, 8
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	add rbx, 8
+	mov rcx, [rbx]
+	xor rcx, rax
+	mov [rbx], rcx
+	pop rcx
+	pop rbx
+	ret
 
 ;-------------------------------
 ;Fill board with all black positions
@@ -239,6 +285,7 @@ getMoves:
 ;--------------------------------
 pawnMoves:
 	push rcx
+	push rbx
 	xor rcx, rcx
 	mov rax, 0x8000000000000000
 	mov qWord [numMovs], 0	;set move counter in 0
@@ -252,6 +299,7 @@ whitePawn:			;moves for white pawn
 	and rax, rdx		;if there is a pawn there
 	cmp rax, 0
 	je nextWPawn		;check next poss for pawn
+	mov qWord [boardBuffer], rax
 	
 	not rax			;not our move
 	and rdx, rax		;remove current pawn position
@@ -259,17 +307,82 @@ whitePawn:			;moves for white pawn
 	shl rax, 0x8		;move pawn one foward
 	call fillWhiteBoard
 	not qWord [whiteBoard]
-	and rax, qWord [whiteBoard]	;if piece here we can't move there
+	and rax, qWord [whiteBoard]	;if W piece here we can't move there
+	call fillBlackBoard
+	not qWord [blackBoard]	;if black piece here can't move either
+	and rax, qWord [blackBoard]
 	cmp rax, 0
-	je nextWPawn
-	
+	je pRAttack
+	;store move
 	inc rcx			;pawn move is valid inc move counter
 	or rdx, rax		;apply the move to the pawn's bitmap
 	push qWord [whitePawns] ;save the current pawns
-	not qWord [whiteBoard]
 	mov [whitePawns], rdx	;make the pawnMove
 	call pushGame		;save the game move for the ai
 	pop qWord [whitePawns]  ;restore them to check other pawn
+pRAttack:;right push attack
+	;load move back up
+	mov rax, qWord [boardBuffer]	;get original piece to move back
+	;check if piece is on the edge
+	and rax, qWord [rightEdge]
+	cmp rax, 0
+	jne pLAttack			;on right edge can only attack left
+	
+	;check for right diagonal attack
+	mov rax, qWord [boardBuffer]
+	mov rdx, [whitePawns]
+	not rax
+	and rdx, rax		;remove current pawn's position
+	not rax
+	
+	shl rax, 9		;right attack
+	call fillWhiteBoard
+	call fillBlackBoard
+	not qWord [whiteBoard]
+	and rax, qWord [whiteBoard]
+	and rax, qWord [blackBoard]
+	cmp rax, 0		;if white piece here can't move
+	je pLAttack		
+	;store move
+	call removePiece	;remove black piece
+	inc rcx			;if valid move inc move counter
+	or rdx, rax
+	push qWord [whitePawns]
+	mov [whitePawns], rdx
+	call pushGame
+	pop qWord [whitePawns]
+pLAttack:;left push attack
+	;load move back up
+	mov rax, qWord [boardBuffer]	;get original piece to move back
+	;check if piece is on the edge
+	and rax, qWord [leftEdge]
+	cmp rax, 0
+	jne nextWPawn			;on right edge can only attack left
+	
+	;check for right diagonal attack
+	mov rax, qWord [boardBuffer]
+	mov rdx, [whitePawns]
+	not rax
+	and rdx, rax		;remove current pawn's position
+	not rax
+	
+	shl rax, 7		;right attack
+	call fillWhiteBoard
+	call fillBlackBoard
+	not qWord [whiteBoard]
+	and rax, qWord [whiteBoard]
+	and rax, qWord [blackBoard]
+	cmp rax, 0		;if white piece here can't move
+	je nextWPawn		
+	;store move
+	call removePiece	;remove black piece
+	inc rcx			;if valid move inc move counter
+	or rdx, rax
+	push qWord [whitePawns]
+	mov [whitePawns], rdx
+	call pushGame
+	pop qWord [whitePawns]
+	
 nextWPawn:
 	pop rax
 	shr rax, 1		;check next poss for pawn
@@ -284,6 +397,7 @@ blackPawn:			;same but for each Black pawn
 	and rax, rdx		;if there is a pawn there
 	cmp rax, 0
 	je nextBPawn		;check next poss for pawn
+	mov qWord [boardBuffer], rax
 
 	not rax			;not our move
 	and rdx, rax		;remove current pawn position
@@ -291,10 +405,13 @@ blackPawn:			;same but for each Black pawn
 	shr rax, 0x8		;move pawn one foward
 
 	call fillBlackBoard
+	call fillWhiteBoard
 	not qWord [blackBoard]
 	and rax, qWord [blackBoard]	;if piece here we can't move there
+	not qWord [whiteBoard]
+	and rax, qWord [whiteBoard]
 	cmp rax, 0
-	je nextBPawn
+	je pbRAttack
 	
 	inc rcx			;pawn move is valid inc move counter
 	or rdx, rax		;apply the move to the pawn's bitmap
@@ -303,11 +420,76 @@ blackPawn:			;same but for each Black pawn
 	mov [blackPawns], rdx	;make the pawnMove
 	call pushGame		;save the game move for the ai	
 	pop qWord [blackPawns]  ;restore them to check other pawn
+
+pbRAttack:;right push attack
+	;load move back up
+	mov rax, qWord [boardBuffer]	;get original piece to move back
+	;check if piece is on the edge
+	and rax, qWord [leftEdge]
+	cmp rax, 0
+	jne pbLAttack			;on right edge can only attack left
+	
+	;check for right diagonal attack
+	mov rax, qWord [boardBuffer]
+	mov rdx, [blackPawns]
+	not rax
+	and rdx, rax		;remove current pawn's position
+	not rax
+	
+	shr rax, 7		;right attack
+	call fillWhiteBoard
+	call fillBlackBoard
+	not qWord [blackBoard]
+	and rax, qWord [blackBoard]
+	and rax, qWord [whiteBoard]
+	cmp rax, 0		;if white piece here can't move
+	je pLAttack		
+	;store move
+	call removePiece	;remove black piece
+	inc rcx			;if valid move inc move counter
+	or rdx, rax
+	push qWord [blackPawns]
+	mov [blackPawns], rdx
+	call pushGame
+	pop qWord [blackPawns]
+pbLAttack:;left push attack
+	;load move back up
+	mov rax, qWord [boardBuffer]	;get original piece to move back
+	;check if piece is on the edge
+	and rax, qWord [rightEdge]
+	cmp rax, 0
+	jne nextWPawn			;on right edge can only attack left
+	
+	;check for right diagonal attack
+	mov rax, qWord [boardBuffer]
+	mov rdx, [blackPawns]
+	not rax
+	and rdx, rax		;remove current pawn's position
+	not rax
+	
+	shr rax, 9		;right attack
+	call fillWhiteBoard
+	call fillBlackBoard
+	not qWord [blackBoard]
+	and rax, qWord [blackBoard]
+	and rax, qWord [whiteBoard]
+	cmp rax, 0		;if black piece here can't move
+	je nextWPawn		
+	;store move
+	call removePiece	;remove black piece
+	inc rcx			;if valid move inc move counter
+	or rdx, rax
+	push qWord [blackPawns]
+	mov [blackPawns], rdx
+	call pushGame
+	pop qWord [blackPawns]
+	
 nextBPawn:
 	pop rax
 	shr rax, 1		;check next poss for pawn
 	jmp blackPawn		;loop
 donePawnMove:
 	mov rax, rcx		;return number of pawn moves
+	pop rbx
 	pop rcx
 	ret			;end pawn move
