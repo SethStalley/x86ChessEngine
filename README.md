@@ -19,7 +19,7 @@ What doesn't Work:
  * pawn passant
  * pawn promotion
  * initial pawn doble move
- * game starting connditions
+ * game starting conditions
   
 What To Do:
  * Move from NegaMax to Alpha-Beta AI  
