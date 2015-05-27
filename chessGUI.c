@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 
+
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
 */
@@ -130,15 +131,16 @@ void callback( GtkWidget *widget,
     fflush(stdout);
 }
 
-int main( int   argc,
-          char *argv[] )
+//int initGui( int   argc, char *argv[] )
+int initGui(int   argc, char *argv[])
 {
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");
 
 
-    gtk_init (&argc, &argv);
+    //gtk_init (&argc, &argv);
+    //gtk_init (&argc, &argv);
     createWindow();
     int i;
     for(i = 0; i<64; i++){

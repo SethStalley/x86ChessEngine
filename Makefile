@@ -2,7 +2,7 @@ TARGET =  main	#main target to compile
 NAME = Chess
 
 all: $(TARGET:=.o)
-	gcc $(TARGET:=.o) board.o printProcedures.o gameState.o -o $(NAME) 
+	gcc $(TARGET:=.o) board.o printProcedures.o gameState.o chessGUI.c `pkg-config --cflags --libs gtk+-2.0` -o $(NAME) 
 
 $(TARGET:=.o): board
 	nasm -felf64 $(TARGET:=.asm)
