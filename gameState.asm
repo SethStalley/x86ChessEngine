@@ -10,6 +10,7 @@ extern blackKnights
 extern blackCastles
 extern blackQueens
 extern blackKing
+extern curPlayer
 
 global pushGame
 global popGame
@@ -217,6 +218,45 @@ popGame:
 	mov rax, [rdx]
 	mov [whitePawns], rax
 	mov [lastMovA], rdx
+	pop rdx
+	pop rax
+	ret
+
+;-------------------------------
+;push oposite color to curPlayer
+;used for piece capturing
+;-------------------------------
+pushOposite:
+	push rax
+	push rdx
+	push rbx
+	mov rdx, [curPlayer]
+	cmp rdx, 1
+	je pushWhite
+	mov rbx, blackPawns
+	jmp pushThatSide
+pushWhite:
+	mov rbx, whitePawns
+pushThatSide:
+	mov rdx, [lastMovA]
+	mov rax, [rbx]
+	mov [rdx], rax
+	add rbx, 8
+	mov rax, [rbx]
+	mov [rdx], rax
+	add rbx, 8
+	mov rax, [rbx]
+	mov [rdx], rax
+	add rbx, 8
+	mov rax, [rbx]
+	mov [rdx], rax
+	add rbx, 8
+	mov rax, [rbx]
+	mov [rdx], rax
+	add rbx, 8
+	mov rax, [rbx]
+	mov [rdx], rax
+	pop rbx
 	pop rdx
 	pop rax
 	ret
