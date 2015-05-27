@@ -143,8 +143,8 @@ nextMove:
 	cmp rcx, 0
 	jne allMoves
 doneNega:
-	mov rax, [curPlayer]
 	call eval	;get an evaluation
+	call print
 	pop rcx
 	ret		;done
 
@@ -211,7 +211,11 @@ whiteRemove:
 beginRemoval:
 	mov rcx, [rbx]
 	push rcx
+	and rax, rcx
+	cmp rax, 0
+	je checkNextPieceRemove
 	xor rcx, rax
+checkNextPieceRemove:
 	mov [rbx], rcx
 	add rbx, 8
 	dec rdx
