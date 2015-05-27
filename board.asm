@@ -31,6 +31,7 @@ section .data
 	curScore	dq 	0	;used by negamax for score keepin
 
 	numMovs	 	dq	0	;num of moves for a certain piece
+	pieceDie	dq	0	;1 if piece died
 
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
@@ -92,13 +93,15 @@ loopAI:	;loop all moves for ai player
 	call pushGame
 	call depthNega	;get depth score for that move
 	call popGame
+	cmp qWord [pieceDie], 1
+	je continueLoopAI
 	cmp rcx, rax
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
 	call pushWinningMove
 continueLoopAI:
+	mov qWord [pieceDie], 0
 	pop rax
-	;call popGame	;undo moves
 	dec rax		;dec loop
 	cmp rax, 0	
 	jne loopAI
@@ -144,7 +147,6 @@ nextMove:
 	jne allMoves
 doneNega:
 	call eval	;get an evaluation
-	call print
 	pop rcx
 	ret		;done
 
@@ -229,6 +231,7 @@ beginRestoreRemoved:
 	inc rdx
 	cmp rdx, 6
 	jne beginRestoreRemoved
+	mov qWord [pieceDie], 1
 	pop rcx
 	pop rbx
 	pop rdx
@@ -241,9 +244,9 @@ fillBlackBoard:
 	push rax
 	push rcx
 	mov rcx, 5
-	mov rbx, blackPawns			;start of black bitboards address
+	mov rbx, blackPawns		;start of black bitboards address
 	xor rax, rax
-loopfillBlackBoard:				;loop through the bitboards
+loopfillBlackBoard:			;loop through the bitboards
 	or rax, [blackPawns + rcx * 8]	
 	dec rcx
 	cmp rcx, 0
