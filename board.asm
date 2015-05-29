@@ -23,7 +23,7 @@ extern pushWinningMove
 extern popWinningMove
 
 section .data
-	aiDepth		dq	2	;depth for negaMax tree
+	aiDepth		dq	5	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white default black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -32,6 +32,7 @@ section .data
 
 	numMovs	 	dq	0	;num of moves for a certain piece
 	pieceDie	dq	0	;1 if piece died
+	noGoodMove	dq	0	;flag is on ai doens't find good move
 
 	blackBoard 	dq 	0x0	;used to store black pieces when calc
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
@@ -58,7 +59,6 @@ section .data
 section .text
 aiMove:
 	call ai
-	;call getMoves
 	call fillBlackBoard
 	call fillWhiteBoard
 	mov rax, [whiteBoard]
@@ -78,6 +78,7 @@ aiMove:
 ai:
 	mov rcx, [aiPlayer]
 	mov [curPlayer], rcx
+	mov qWord [noGoodMove], 1
 	xor rcx, rcx	;hold higest move score
 	mov rcx, -300
 	call getMoves	;does moves and gets # of them - in stack
@@ -97,7 +98,9 @@ loopAI:	;loop all moves for ai player
 	je continueLoopAI
 	cmp rcx, rax
 	jg continueLoopAI
+	mov qWord [noGoodMove],0
 	mov rcx, rax	;store greater score
+	call print
 	call pushWinningMove
 continueLoopAI:
 	mov qWord [pieceDie], 0
@@ -105,6 +108,9 @@ continueLoopAI:
 	dec rax		;dec loop
 	cmp rax, 0	
 	jne loopAI
+	cmp qWord [noGoodMove], 1	;is there a good move?
+	jne doneAI
+	call pushWinningMove	;force a move even though it is bad
 doneAI:
 	call popWinningMove ;do the move
 	ret
@@ -282,6 +288,25 @@ getMoves:
 	call pawnMoves	;figure out pawn moves
 	ret
 
+
+;--------------------------------
+;Bishop movement AI
+; [curPlayer] = 1 white	player
+; [curPlayer] = -1 black player
+;--------------------------------
+bishopMoves:
+	push rcx
+	push rbx
+	xor rcx, rcx
+	mov rax, 0x8000000000000000	;check all bits in board
+	mov qWord [numMovs], 0		;set move counter in 0
+	cmp qWord [curPlayer], 1	;what player are we?
+	jne blackBishop
+whiteBishop:
+blackBishop:
+	pop rbx
+	pop rcx
+	ret
 
 ;--------------------------------
 ;Pawn movement AI, send it pawn
