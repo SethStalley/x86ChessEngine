@@ -5,7 +5,8 @@ section .data
 section .text
     	global main
 
-main:	
+main:
+	;call gtk init function
 	push rbp
 	mov rsi, temp
 	mov rdi, temp
@@ -13,14 +14,16 @@ main:
 	call gtk_init
 	pop rbp
 
+	;load all the gtk gui elements
 	push rbp
 	mov rsi, [temp]
 	mov rdi, [temp]
 	xor rax, rax
 	call initGui
 	pop rbp
-	
 	xor rax, rax		;return 0
+	jmp exitMain       ;temp jump
+
 	mov rax, 1
 	mov rcx, 15
 gameLoop:
@@ -34,7 +37,7 @@ gameLoop:
 	dec rcx
 	cmp rcx, 0
 	jne gameLoop
-	
-	
-    	xor eax, eax	;exit code
+
+exitMain:
+    xor eax, eax	;exit code
 	ret
