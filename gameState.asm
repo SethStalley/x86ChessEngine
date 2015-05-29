@@ -20,7 +20,7 @@ global popWinningMove
 section .data
 	lastMovA	dq	moves	;last game push move address
 section .bss
-	moves		resq	8*12*67000	;store game states here
+	moves		resq	8*12*2000000	;store game states here
 	winningMove	resq	8*12 	;ai's move
 section .text
 
