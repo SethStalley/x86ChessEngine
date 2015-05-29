@@ -4,28 +4,43 @@
 #include <unistd.h>
 #include <string.h>
 
+//use asm global bitmaps to load board later
+extern long long whitePawns;
+// extern long long whiteBishops;
+// extern long long whiteKnights;
+// extern long long whiteCastles;
+// extern long long whiteQueens;
+// extern long long whiteKing;
+//
+// extern long long blackPawns;
+// extern long long blackBishops;
+// extern long long blackKnights;
+// extern long long blackCastles;
+// extern long long blackQueens;
+// extern long long blackKing;
+
+extern long long aiPlayer;  //current player AI uses
+
+extern aiMove();
 
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
 */
 
-/* Our callback.
- * The data passed to this function is printed to stdout */
+int board[64];
+GtkWidget *window;
+GtkWidget *layout, *boardWiget;
+GtkWidget *image;
+GtkWidget* table;
+GtkWidget *button, *bMove; //butons
+GtkLayout* label;
+GtkEntry* entry;
+char path[1024]; //img folder path
+char tempPath[1024];
 
-    int board[64];
-    GtkWidget *window;
-    GtkWidget *layout;
-    GtkWidget *image;
-    GtkWidget* table;
-    GtkWidget* button;
-    GtkLayout* label;
-    GtkEntry* entry;
-    char path[1024]; //img folder path
-    char tempPath[1024];
+
 
 void createWindow(){
-    
-
     //create new window
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
@@ -40,72 +55,18 @@ void createWindow(){
 
     layout = gtk_layout_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER (window), layout);
-    
+
 	strcpy(tempPath, path);
     image = gtk_image_new_from_file(strcat(tempPath, "chessBoard.svg"));
     gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
-
 }
 
-void addPieces(){
-    int i; 
-    for(i = 0; i<64; i++){
-	int position = i;
-	int x = ((i%8) * 100) + 20;
-	int y = (abs((i/8)-7) * 100) + 20;
-	strcpy(tempPath, path);
-        switch(board[i]){
-        case 1:
-            image = gtk_image_new_from_file(strcat(tempPath, "wpawn.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);    
-            break;
-        case 2:
-            image = gtk_image_new_from_file(strcat(tempPath, "wbishop.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 3:
-            image = gtk_image_new_from_file(strcat(tempPath, "wknight.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 4:
-            image = gtk_image_new_from_file(strcat(tempPath, "wrook.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 5:
-            image = gtk_image_new_from_file(strcat(tempPath, "wqueen.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 6:
-            image = gtk_image_new_from_file(strcat(tempPath, "wking.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 7:
-            image = gtk_image_new_from_file(strcat(tempPath, "bpawn.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 8:
-            image = gtk_image_new_from_file(strcat(tempPath, "bbishop.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 9:
-            image = gtk_image_new_from_file(strcat(tempPath, "bknight.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 10:
-            image = gtk_image_new_from_file(strcat(tempPath, "brook.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 11:
-            image = gtk_image_new_from_file(strcat(tempPath, "bqueen.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-	case 12:
-            image = gtk_image_new_from_file(strcat(tempPath, "bking.png"));
-            gtk_layout_put(GTK_LAYOUT(layout), image, x, y);
-	    break;
-        }
-    }
+void createBoard(){
+    boardWiget = gtk_layout_new(NULL, NULL);
+    gtk_container_add(GTK_CONTAINER (window), boardWiget);
 }
+
+
 
 static void CreateTextBox()
 {
@@ -131,59 +92,28 @@ void callback( GtkWidget *widget,
     fflush(stdout);
 }
 
+//do a move
+void move(GtkWidget *widget){
+    printf("Moved\n");
+    //ai to move
+    aiMove();
+    aiPlayer *= -1;
+    addPieces();
+    fflush(stdout);
+}
+
 //int initGui( int   argc, char *argv[] )
 int initGui(int   argc, char *argv[])
 {
+    aiPlayer = 1;
+
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");
 
-
-    //gtk_init (&argc, &argv);
-    //gtk_init (&argc, &argv);
     createWindow();
-    int i;
-    for(i = 0; i<64; i++){
-        board[i] = 0;
-    }
-    board[0] = 4;
-    board[1] = 3;
-    board[2] = 2;
-    board[3] = 5;
-    board[4] = 6;
-    board[5] = 2;
-    board[6] = 3;
-    board[7] = 4;
+    //add the pieces to board
 
-    board[8] = 1;
-    board[9] = 1;
-    board[10] = 1;
-    board[11] = 1;
-    board[12] = 1;
-    board[13] = 1;
-    board[14] = 1;
-    board[15] = 1;
-
-
-
-    board[48] = 7;
-    board[49] = 7;
-    board[50] = 7;
-    board[51] = 7;
-    board[52] = 7;
-    board[53] = 7;
-    board[54] = 7;
-    board[55] = 7;
-
-    board[56] = 10;
-    board[57] = 9;
-    board[58] = 8;
-    board[59] = 12;
-    board[60] = 11;
-    board[61] = 8;
-    board[62] = 9;
-    board[63] = 10;
-    addPieces();
     CreateTextBox();
 
     button = gtk_button_new_with_label("Print Text");
@@ -192,16 +122,23 @@ int initGui(int   argc, char *argv[])
     gtk_signal_connect(GTK_OBJECT(button), "clicked",
                        GTK_SIGNAL_FUNC(callback),
                        (gpointer)entry);
-   
-    
+
+	//do the move button
+	bMove = gtk_button_new_with_label("MOVE");
+	gtk_widget_show(bMove);
+	gtk_layout_put(GTK_LAYOUT(layout), bMove, 825,250);
+    gtk_signal_connect(GTK_OBJECT(bMove), "clicked",
+                       GTK_SIGNAL_FUNC(move),(gpointer)entry);
+
 
 
     gtk_container_add(GTK_CONTAINER (layout), table);
     gtk_widget_show(layout);
 
-    
-    gtk_widget_show_all  (window);
-    
+
+    addPieces();
+    gtk_widget_show_all(window);
+
 
     //close on exit
     g_signal_connect_swapped(G_OBJECT(window), "destroy",
@@ -209,6 +146,96 @@ int initGui(int   argc, char *argv[])
 
 
     gtk_main ();
-    
+
+
     return 0;
+}
+
+//add pieces to board in gui from global bitmaps
+void addPieces(){
+    //clear widget
+    createBoard();
+
+    int i, j;
+    //clear the board first
+    for(i = 0; i<64; i++){
+        board[i] = 0;
+    }
+    //copy over current bitMaps to temp vars
+    long long guiPiece = whitePawns;
+
+    //add all pieces to board from bitmaps
+    for(i = 0; i<12; i++){
+            //for bitmap of every piece type
+            guiPiece = *(&whitePawns+i);
+            //check for a bit on
+            long long bitChecker = 0x1;
+        for(j = 0; j<64;j++){
+            int pieceHere = (bitChecker & guiPiece) == 0 ? 0:1;
+            if(pieceHere)
+                //asign piece type
+                board[j] = i + 1;
+            //shift bitChecker one bit left
+            bitChecker <<= 1;
+        }
+    }
+
+    //add images for each piece on board
+  for(i = 0; i<64; i++){
+  	int position = i;
+  	int x = ((i%8) * 100) + 20;
+  	int y = (abs((i/8)-7) * 100) + 20;
+  	strcpy(tempPath, path);
+        switch(board[i]){
+          case 1:
+              image = gtk_image_new_from_file(strcat(tempPath, "wpawn.png"));
+              gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+              break;
+          case 2:
+              image = gtk_image_new_from_file(strcat(tempPath, "wbishop.png"));
+              gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+  	         break;
+        	case 3:
+                    image = gtk_image_new_from_file(strcat(tempPath, "wknight.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 4:
+                    image = gtk_image_new_from_file(strcat(tempPath, "wrook.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 5:
+                    image = gtk_image_new_from_file(strcat(tempPath, "wqueen.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 6:
+                    image = gtk_image_new_from_file(strcat(tempPath, "wking.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 7:
+                    image = gtk_image_new_from_file(strcat(tempPath, "bpawn.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 8:
+                    image = gtk_image_new_from_file(strcat(tempPath, "bbishop.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 9:
+                    image = gtk_image_new_from_file(strcat(tempPath, "bknight.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 10:
+                    image = gtk_image_new_from_file(strcat(tempPath, "brook.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 11:
+                    image = gtk_image_new_from_file(strcat(tempPath, "bqueen.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        	case 12:
+                    image = gtk_image_new_from_file(strcat(tempPath, "bking.png"));
+                    gtk_layout_put(GTK_LAYOUT(boardWidget), image, x, y);
+        	    break;
+        }
+    }
+    gtk_widget_show(boardWidget);
 }
