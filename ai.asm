@@ -94,9 +94,9 @@ loopAI:	;loop all moves for ai player
 	call pushGame
 	call depthNega	;get depth score for that move
 	call popGame
-	cmp qWord [pieceDie], 1
-	je continueLoopAI
-	;imul rax, -1
+	;cmp qWord [pieceDie], 1
+	;je continueLoopAI
+	;imul rax, qWord [aiPlayer]
 	cmp rcx, rax
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
@@ -109,9 +109,9 @@ continueLoopAI:
 	dec rax		;dec loop
 	cmp rax, 0
 	jne loopAI
-	cmp qWord [noGoodMove], 1
-	jne doneAI
-	call pushWinningMove
+	;cmp qWord [noGoodMove], 1
+	;jne doneAI
+	;call pushWinningMove
 doneAI:
 	call popWinningMove
 	ret
@@ -143,7 +143,6 @@ allMoves:		;loop over all players posible moves
 
 	;recurse
 	call depthNega	;recurse
-	imul rax, -1	;negate returned value from eval
 	cmp [curScore],rax	;is new score (rbx) higher?
 	jng nextMove
 swapMaxScore:
@@ -155,6 +154,7 @@ nextMove:
 doneNega:
 	call eval	;get an evaluation
 	pop rcx
+	imul rax, -1	;negate returned value from eval
 	ret		;done
 
 ;-------------------------------
