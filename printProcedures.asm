@@ -14,10 +14,12 @@ print:			;print rax for testing
 	push rcx	;printf used this save it
 	push rsi
 	push rdi
+	push rdx
 	mov rsi,rax
 	mov rdi, printD
 	xor rax, rax
 	call printf
+	pop rdx
 	pop rdi
 	pop rsi
 	pop rcx

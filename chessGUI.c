@@ -40,7 +40,7 @@ char tempPath[1024];
 
 
 //do a move
-void move(GtkWidget *widget){
+void move(){
     printf("Moved\n");
     //ai to move
     ai();
@@ -132,14 +132,12 @@ int initGui(int   argc, char *argv[])
     //add the pieces to board
     addPieces();
 
-    button = gtk_button_new_with_label("Print Text");
-    gtk_widget_show(button);
-    gtk_layout_put(GTK_LAYOUT(layout), button, 825, 150);
-    gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                       GTK_SIGNAL_FUNC(callback),
-                       (gpointer)entry);
-
-
+    // button = gtk_button_new_with_label("Print Text");
+    // gtk_widget_show(button);
+    // gtk_layout_put(GTK_LAYOUT(layout), button, 825, 150);
+    // gtk_signal_connect(GTK_OBJECT(button), "clicked",
+    //                    GTK_SIGNAL_FUNC(callback),
+    //                    (gpointer)entry);
 
     gtk_widget_show(layout);
     gtk_widget_show_all(window);
@@ -158,7 +156,7 @@ int initGui(int   argc, char *argv[])
 
 //add pieces to board in gui from global bitmaps
 void addPieces(){
-    
+
 
     int i, j;
     //clear the board first

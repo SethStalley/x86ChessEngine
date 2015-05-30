@@ -1,4 +1,4 @@
-extern printf, aiMove, aiPlayer, initGui, gtk_init
+extern printf, ai, aiPlayer, initGui, gtk_init
 section .data
 	msg    db "%d",10,0
 	temp   db 0
@@ -30,7 +30,7 @@ gameLoop:
 	push rcx
 	push rax
 	mov [aiPlayer], rax
-	call aiMove
+	call ai
 	pop rax
 	pop rcx
 	imul rax, -1		;swap player
