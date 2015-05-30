@@ -14,6 +14,12 @@ global blackCastles
 global blackQueens
 global blackKing
 
+global rightEdge
+global fillWhiteBoard
+global removePiece
+global boardBuffer
+global whiteBoard
+
 extern print
 extern printSpace
 extern printBitMap
@@ -21,6 +27,8 @@ extern pushGame
 extern popGame
 extern pushWinningMove
 extern popWinningMove
+;piece move procedures
+extern bishopMoves
 
 section .data
 	aiDepth		dq	2	;depth for negaMax tree
@@ -288,28 +296,11 @@ loopfillWhiteBoard:
 ;also place num of posible moves in rax
 ;--------------------------------
 getMoves:
+	xor rax, rax
 	call pawnMoves	;figure out pawn moves
+	call bishopMoves
 	ret
 
-
-;--------------------------------
-;Bishop movement AI
-; [curPlayer] = 1 white	player
-; [curPlayer] = -1 black player
-;--------------------------------
-bishopMoves:
-	push rcx
-	push rbx
-	xor rcx, rcx
-	mov rax, 0x8000000000000000	;check all bits in board
-	mov qWord [numMovs], 0		;set move counter in 0
-	cmp qWord [curPlayer], 1	;what player are we?
-	jne blackBishop
-whiteBishop:
-blackBishop:
-	pop rbx
-	pop rcx
-	ret
 
 ;--------------------------------
 ;Pawn movement AI, send it pawn
@@ -319,6 +310,7 @@ blackBishop:
 pawnMoves:
 	push rcx
 	push rbx
+	push rax
 	xor rcx, rcx
 	mov rax, 0x8000000000000000
 	mov qWord [numMovs], 0	;set move counter in 0
@@ -418,7 +410,6 @@ nextWPawn:
 	pop rax
 	shr rax, 1		;check next poss for pawn
 	jmp whitePawn		;loop
-	jmp donePawnMove
 
 blackPawn:			;same but for each Black pawn
 	mov rdx, [blackPawns]
@@ -518,7 +509,8 @@ nextBPawn:
 	shr rax, 1		;check next poss for pawn
 	jmp blackPawn		;loop
 donePawnMove:
-	mov rax, rcx		;return number of pawn moves
+	pop rax
+	add rax, rcx		;return number of pawn moves
 	pop rbx
 	pop rcx
 	ret			;end pawn move
