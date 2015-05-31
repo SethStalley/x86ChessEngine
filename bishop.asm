@@ -9,6 +9,7 @@ extern fillWhiteBoard
 extern fillBlackBoard
 extern whitePawns
 extern removePiece
+extern pieceDie
 extern whiteBishops
 extern curPlayer
 extern boardBuffer
@@ -31,7 +32,7 @@ whiteBishop:
 	xor rbx, rbx
 	jmp Bishop
 blackBishop:
-	mov rbx, 48					;displace to black bishop bitboard
+	mov rbx, 48			;displace to black bishop bitboard
 Bishop:
 	;loop for every bit bishop map
 	mov rdx, qWord [whiteBishops + rbx]
@@ -51,19 +52,19 @@ Bishop:
 	je leftDiagonalFoward
 	;check for right diagonal mov
 	mov rdx, [whiteBishops + rbx]
-	not qWord [boardBuffer]					;not piece place
-	and rdx, qWord [boardBuffer]			;remove current bishop
-	not qWord [boardBuffer]					;get piece back
+	not qWord [boardBuffer]		;not piece place
+	and rdx, qWord [boardBuffer]	;remove current bishop
+	not qWord [boardBuffer]		;get piece back
 	shl rax, 9
 	cmp qWord [curPlayer], 1
 	jne blackCheck1
-	call whitePieceCheck					;check if white piece there
+	call whitePieceCheck	;check if white piece there
 	jmp whiteCheck1
 	blackCheck1:
 	call blackPieceCheck
 	whiteCheck1:
-	cmp rax, 0				;if 0 invalid move
-	je leftDiagonalFoward	;check other dir
+	cmp rax, 0			;if 0 invalid move
+	je leftDiagonalFoward		;check other dir
 	;valid move, store it
 	inc rcx
 	or rdx, rax
@@ -71,12 +72,14 @@ Bishop:
 	mov [whiteBishops + rbx], rdx
 	call removePiece		;if captured oposite
 	pop qWord [whiteBishops + rbx]
-	jmp rightDiagonalFoward	;slide all the way
-
-	mov rax, qWord [boardBuffer]
+	cmp qWord [pieceDie], 1
+	;je leftDiagonalFoward
+	jmp rightDiagonalFoward		;slide all the way
 
 	;check left diagonal foward
 	leftDiagonalFoward:
+	mov rax, qWord [boardBuffer]
+lDFowardLoop:
 	and rax, qWord [leftEdge]	;if it's on LEFT edge
 	and rax, qWord [topEdge]
 	cmp rax, 0			;can't move then
@@ -84,7 +87,7 @@ Bishop:
 	;check for right diagonal mov
 	mov rdx, [whiteBishops + rbx]
 	not qWord [boardBuffer]	;not piece place
-	and rdx, qWord [boardBuffer]			;remove current bishop
+	and rdx, qWord [boardBuffer]	;remove current bishop
 	not qWord [boardBuffer]					;get piece back
 	shl rax, 7			;attack
 	cmp qWord [curPlayer], 1
@@ -103,11 +106,15 @@ Bishop:
 	mov [whiteBishops + rbx], rdx
 	call removePiece		;if captured oposite
 	pop qWord [whiteBishops + rbx]
-	jmp leftDiagonalFoward	;slide all the way
+	cmp qWord [pieceDie], 1
+	;je leftDiagonalBackward
+	jmp lDFowardLoop
 
-	mov rax, qWord [boardBuffer]
+
 	rightDiagonalBackward:
-	and rax, qWord [rightEdge]	;if it's on RIGHT edge
+	mov rax, qWord [boardBuffer]
+rDBackLoop:
+	and rax, qWord [leftEdge]	;if it's on LEFT edge
 	and rax, qWord [bottomEdge]
 	cmp rax, 0			;can't move then
 	je leftDiagonalBackward
@@ -133,11 +140,14 @@ Bishop:
 	mov [whiteBishops + rbx], rdx
 	call removePiece		;if captured oposite
 	pop qWord [whiteBishops + rbx]
-	jmp rightDiagonalBackward	;slide all the way
+	cmp qWord [pieceDie], 1
+	;je leftDiagonalBackward
+	jmp rDBackLoop			;slide all the way
 
-	mov rax, qWord [boardBuffer]
 	leftDiagonalBackward:
-	and rax, qWord [leftEdge]	;if it's on LEFT edge
+	mov rax, qWord [boardBuffer]
+lDBackLoop:
+	and rax, qWord [rightEdge]	;if it's on RIGHT edge
 	and rax, qWord [bottomEdge]
 	cmp rax, 0			;can't move then
 	je nextBishop
@@ -146,7 +156,7 @@ Bishop:
 	not qWord [boardBuffer]	;not piece place
 	and rdx, qWord [boardBuffer]			;remove current bishop
 	not qWord [boardBuffer]					;get piece back
-	shr rax, 9			;attack
+	shr rax, 7			;attack
 	cmp qWord [curPlayer], 1
 	jne blackCheck4
 	call whitePieceCheck					;check if white piece there
@@ -163,7 +173,9 @@ Bishop:
 	mov [whiteBishops + rbx], rdx
 	call removePiece		;if captured oposite
 	pop qWord [whiteBishops + rbx]
-	jmp leftDiagonalBackward	;slide all the way
+	cmp qWord [pieceDie], 1
+	;je nextBishop
+	jmp lDBackLoop
 
 nextBishop:
 	pop rax
@@ -187,5 +199,4 @@ blackPieceCheck:
 	call fillBlackBoard
 	not qWord [blackBoard]
 	and rax, qWord [blackBoard]
-	call printBitMap
 	ret

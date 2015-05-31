@@ -16,6 +16,7 @@ global pushGame
 global popGame
 global pushWinningMove
 global popWinningMove
+global lastMovA
 
 section .data
 	lastMovA	dq	moves	;last game push move address

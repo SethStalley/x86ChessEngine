@@ -25,6 +25,7 @@ global removePiece
 global boardBuffer
 global whiteBoard
 global blackBoard
+global pieceDie
 
 extern print
 extern printSpace
@@ -35,6 +36,7 @@ extern pushWinningMove
 extern popWinningMove
 ;piece move procedures
 extern bishopMoves
+extern lastMovA
 
 section .data
 	aiDepth		dq	2	;depth for negaMax tree
@@ -196,7 +198,6 @@ eval:
 	popcnt rax, [rbx]		;count how many bits are on
 	popcnt rcx, [rbx + 48]	;sub from how many for black on
 	sub rax, rcx
-	jmp doneEval
 
 	;Bishops
 	add rbx, 8
@@ -242,7 +243,20 @@ eval:
 	popcnt rcx, [rbx+48]
 	imul rcx, 200
 	sub rax, rcx
-	doneEval:
+
+	push qWord [curPlayer]
+	push rax
+	mov qWord [curPlayer], 1
+	;call numMoves			;get num moves posible
+	mov rcx, rax
+	mov qWord [curPlayer], -1	;now for black player
+	;call numMoves			;num of moves
+	sub rcx, rax			;sub num black moves
+	pop rax
+	pop qWord [curPlayer]
+	;shr rcx, 3			;get (1/2)^3 value
+	;add rax, rcx
+
 	pop rcx
 	pop rbx
 	ret				;end of procedure
@@ -252,6 +266,7 @@ eval:
 ;the black piece from board
 ;-------------------------------
 removePiece:
+	mov qWord [pieceDie], 0
 	push rdx
 	push rbx
 	push rcx
@@ -271,6 +286,7 @@ beginRemoval:
 	cmp rax, 0
 	je checkNextPieceRemove
 	xor rcx, rax
+	mov qWord [pieceDie], 1	;mark that a piece died
 checkNextPieceRemove:
 	mov [rbx], rcx
 	pop rax
@@ -330,6 +346,18 @@ loopfillWhiteBoard:
 	ret
 
 ;--------------------------------
+;Get num of movs posible from a position
+;WARNING THIS DOESN"T WORK AS EXPECTED YET
+;--------------------------------
+numMoves:
+	push rdx
+	mov rdx, [lastMovA]
+	call getMoves
+	mov [lastMovA], rdx
+	pop rdx
+
+
+;--------------------------------
 ;Push all posible moves into stack
 ;also place num of posible moves in rax
 ;--------------------------------
@@ -338,7 +366,7 @@ getMoves:
 	push rbx
 	xor rax, rax
 	call pawnMoves	;figure out pawn moves
-	;call bishopMoves
+	call bishopMoves
 	pop rbx
 	pop rdx
 	ret
