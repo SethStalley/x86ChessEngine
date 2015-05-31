@@ -343,7 +343,7 @@ loopfillWhiteBoard:
 getMoves:
 	xor rax, rax
 	call pawnMoves	;figure out pawn moves
-	;call bishopMoves
+	call bishopMoves
 	ret
 
 
@@ -505,7 +505,7 @@ pbRAttack:;right push attack
 	and rdx, rax		;remove current pawn's position
 	not rax
 
-	shr rax, 7		;right attack
+	shr rax, 9		;right attack
 	call fillWhiteBoard
 	call fillBlackBoard
 	not qWord [blackBoard]
@@ -534,7 +534,7 @@ pbLAttack:;left push attack
 	and rdx, rax		;remove current pawn's position
 	not rax
 
-	shr rax, 9		;left attack
+	shr rax, 7		;left attack
 	call fillWhiteBoard
 	call fillBlackBoard
 	not qWord [blackBoard]
