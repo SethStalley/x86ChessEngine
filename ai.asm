@@ -37,7 +37,7 @@ extern popWinningMove
 extern bishopMoves
 
 section .data
-	aiDepth		dq	3	;depth for negaMax tree
+	aiDepth		dq	2	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -73,114 +73,108 @@ section .data
 	blackKing    	dq	0x1000000000000000
 
 section .text
-aiMove:
-	call ai
-	call fillBlackBoard
-	call fillWhiteBoard
-	mov rax, [whiteBoard]
-	or rax, [blackBoard]
-	call printBitMap
-	ret
-
 ;--------------------------------------
 ;NegaMax Procedure
 ;This is the backbone of our AI
 ;analyzes all best moves to "AIdepth"
-;for each player choces best for itself
-;---------
-;Expects depth in cl
+;for each player choose best for itself
 ;--------------------------------------
 ;Upper negaMax gets score for every current move on one side
 ai:
-	mov rcx, [aiPlayer]
-	mov [curPlayer], rcx
-	;mov qWord [noGoodMove], 1
-	xor rcx, rcx	;hold higest move score
-	mov rcx, -300
-	call getMoves	;does moves and gets # of them - in stack
-	call print
-loopAI:	;loop all moves for ai player
-	push rax	;store loop counter
-	call popGame	;pop the game to that move from getMoves
-
-	;set depth and player
-	mov rax, [aiDepth]
-	mov [curDepth], rax
-	mov rax, [aiPlayer]
-	mov [curPlayer], rax
-	;get score
+	mov rdx, qWord [aiPlayer]
+	mov qWord [curPlayer], rdx
+	mov qWord [curScore], -300
+	call getMoves
+loopai:
+	call popGame
 	call pushGame
-	call depthNega	;get depth score for that move
-	;imul rax, qWord [aiPlayer]
+	mov rcx, qWord [aiDepth]
+	inc rcx						;to counter initial dec in ai
+	push rax					;loop every piece counter
+	push qWord [curScore]
+	imul rdx, -1
+	push rdx
+	push rcx
+	call NegaMax				;get best move score
+	call popGame				;get game state back
+	pop rcx
+	pop rdx
+	pop qWord [curScore]
 	imul rax, -1
+call print
+	imul rdx, -1
+	cmp rax, qWord [curScore]
+	jng finalScore
+	mov qWord [curScore], rax
+	call pushWinningMove
+finalScore:
 	call print
-;call fillWhiteBoard
-;push rax
-;mov rax, [whiteBoard]
-;call printBitMap
-;pop rax
+	pop rax
+	dec rax
+	cmp rax, 0					;check every piece?
+	jne loopai
+	call popWinningMove			;make the move
+	ret
+
+NegaMax:
+	push rbp					;save base pointer
+
+	mov rbp, rsp				;get pushed parameter
+	add rbp, 16
+	mov rcx, [rbp]				;move depth parameter to rcx
+	add rbp, 8
+	mov rdx, [rbp]
+
+	cmp rcx, 0
+	jle doneNegaMax
+
+	;minimum score
+	push rdx
+	mov rdx, -300		;base score
+	mov qWord [curScore], rdx
+	pop rdx
+
+	mov qWord [curPlayer], rdx	;move cur player
+
+	call getMoves		;get all posible movs for that player
+	cmp rax, 0
+	je doneNegaMax
+negaLoop:
+	;for every move
 	call popGame
 
-	cmp rcx, rax
-	jg continueLoopAI
-	mov rcx, rax	;store greater score
-	;call printSpace
-	;call print
-	;mov qWord [noGoodMove],0
-	call pushWinningMove
-continueLoopAI:
-	pop rax
-	dec rax		;dec loop
-	cmp rax, 0
-	jne loopAI
-	;cmp qWord [noGoodMove], 1
-	;je doneAI
-	call popWinningMove
-doneAI:
-	ret
-
-;search deep to find the best move
-depthNega:
+	push rax		;loop counter
 	push rbx
-
-	;store rcx
-	push rcx
-	cmp qWord [curDepth],  0
-	je doneNega	;reached bottom of our search tree
-	dec qWord [curDepth]	;dec tree search depth
-	;mov qWord [curScore], -300	;large worse case score
-	mov rbx, -300
-	;change PLayer
-	mov rax, [curPlayer]
-	imul rax, -1
-	mov [curPlayer], rax
-	call getMoves	;check moves for all unique piece types on given side
-	mov rcx, rax
-	xor rax, rax
-allMoves:		;loop over all players posible moves
-	;do moves
-	call popGame	;pop the game to that move from getMoves
-	;recurse
-	call depthNega	;recurse
-	;imul rax, -1	;negate returned value from eval
-	;call print
-	cmp rbx,rax	;is new score (rax) higher?
-	jg nextMove
-swapMaxScore:
-	mov rbx, rax	;swap max with score
-nextMove:
+	push rdx
+	push qWord [curScore]   ;save score
+	imul rdx, -1			;switch player
 	dec rcx
-	cmp rcx, 0
-	jne allMoves
-	mov rax, rbx
+	push rdx
+	push rcx					;push parameter
+	call NegaMax
 	pop rcx
+	pop rdx
+	pop qWord [curScore]	;get score back
+	pop rdx
+	imul rax, -1
+	cmp rax, qWord [curScore]	;is nex score greater?
+	jng	keepScore
+	mov qWord [curScore], rax
+keepScore:				;not greater keep current
 	pop rbx
+	pop rax
+
+	dec rax			;dec moves to do counter
+	cmp rax, 0
+	jne negaLoop
+	pop rbp
+	mov rax, qWord [curScore]
 	ret
-doneNega:
-	call eval	;get an evaluation, return in rax
-	pop rcx
-	pop rbx
-	ret		;done
+doneNegaMax:
+	call eval
+	imul rax, rdx
+	pop rbp
+	ret
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
@@ -202,6 +196,7 @@ eval:
 	popcnt rax, [rbx]		;count how many bits are on
 	popcnt rcx, [rbx + 48]	;sub from how many for black on
 	sub rax, rcx
+	jmp doneEval
 
 	;Bishops
 	add rbx, 8
@@ -247,9 +242,7 @@ eval:
 	popcnt rcx, [rbx+48]
 	imul rcx, 200
 	sub rax, rcx
-	;mul by player color
-	mov rcx, qWord [curPlayer]
-	imul rax, rcx			;negate score if black
+	doneEval:
 	pop rcx
 	pop rbx
 	ret				;end of procedure
@@ -341,9 +334,13 @@ loopfillWhiteBoard:
 ;also place num of posible moves in rax
 ;--------------------------------
 getMoves:
+	push rdx
+	push rbx
 	xor rax, rax
 	call pawnMoves	;figure out pawn moves
-	call bishopMoves
+	;call bishopMoves
+	pop rbx
+	pop rdx
 	ret
 
 
