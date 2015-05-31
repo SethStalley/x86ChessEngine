@@ -1,4 +1,4 @@
-global ai
+global ai, aiMove
 global aiPlayer
 global curPlayer
 global whitePawns
@@ -15,10 +15,16 @@ global blackQueens
 global blackKing
 
 global rightEdge
+global leftEdge
+global topEdge
+global bottomEdge
+
 global fillWhiteBoard
+global fillBlackBoard
 global removePiece
 global boardBuffer
 global whiteBoard
+global blackBoard
 
 extern print
 extern printSpace
@@ -31,8 +37,8 @@ extern popWinningMove
 extern bishopMoves
 
 section .data
-	aiDepth		dq	2	;depth for negaMax tree
-	aiPlayer	dq 	1	;if ai is black/white default black
+	aiDepth		dq	3	;depth for negaMax tree
+	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
 	curPlayer	dq 	0
@@ -46,16 +52,18 @@ section .data
 	whiteBoard 	dq 	0x0	;used to store white pieces when calc
 
 	boardBuffer 	dq	0x0	;used as temporary move storage
-	;used to check if piece is on an edge
-	leftEdge	dq	0x101010101010101
-	rightEdge	dq	0x8080808080808080
+	;used to check if piece is on an edge we fill bits where valid area
+	leftEdge	dq	0xFEFEFEFEFEFEFEFE
+	rightEdge	dq	0x7F7F7F7F7F7F7F7F
+	topEdge		dq	0xFFFFFFFFFFFFFF
+	bottomEdge	dq	0xFFFFFFFFFFFFFF00
 					;bitboards for white
-	whitePawns 	dq 	0xff00
+	whitePawns 		dq 	0xff00
 	whiteBishops 	dq	0x24
 	whiteKnights 	dq 	0x42
 	whiteCastles 	dq 	0x81
 	whiteQueens 	dq 	0x8
-	whiteKing 	dq 	0x10
+	whiteKing 		dq 	0x10
 					;bitboards for black
 	blackPawns  	dq 	0xff000000000000
 	blackBishops 	dq 	0x2400000000000000
@@ -86,13 +94,15 @@ aiMove:
 ai:
 	mov rcx, [aiPlayer]
 	mov [curPlayer], rcx
-	mov qWord [noGoodMove], 1
+	;mov qWord [noGoodMove], 1
 	xor rcx, rcx	;hold higest move score
 	mov rcx, -300
 	call getMoves	;does moves and gets # of them - in stack
+	call print
 loopAI:	;loop all moves for ai player
 	push rax	;store loop counter
 	call popGame	;pop the game to that move from getMoves
+
 	;set depth and player
 	mov rax, [aiDepth]
 	mov [curDepth], rax
@@ -101,73 +111,81 @@ loopAI:	;loop all moves for ai player
 	;get score
 	call pushGame
 	call depthNega	;get depth score for that move
-	call popGame
-	;cmp qWord [pieceDie], 1
-	;je continueLoopAI
 	;imul rax, qWord [aiPlayer]
+	imul rax, -1
+	call print
+;call fillWhiteBoard
+;push rax
+;mov rax, [whiteBoard]
+;call printBitMap
+;pop rax
+	call popGame
+
 	cmp rcx, rax
 	jg continueLoopAI
 	mov rcx, rax	;store greater score
-	mov qWord [noGoodMove],0
-	call print
+	;call printSpace
+	;call print
+	;mov qWord [noGoodMove],0
 	call pushWinningMove
 continueLoopAI:
-	mov qWord [pieceDie], 0
 	pop rax
 	dec rax		;dec loop
 	cmp rax, 0
 	jne loopAI
 	;cmp qWord [noGoodMove], 1
-	;jne doneAI
-	;call pushWinningMove
-doneAI:
+	;je doneAI
 	call popWinningMove
+doneAI:
 	ret
 
 ;search deep to find the best move
 depthNega:
-	;change PLayer
-	mov rax, [curPlayer]
-	imul rax, -1
-	mov [curPlayer], rax
+	push rbx
+
 	;store rcx
 	push rcx
 	cmp qWord [curDepth],  0
 	je doneNega	;reached bottom of our search tree
 	dec qWord [curDepth]	;dec tree search depth
-	mov qWord [curScore], -300	;large worse case score
+	;mov qWord [curScore], -300	;large worse case score
+	mov rbx, -300
+	;change PLayer
+	mov rax, [curPlayer]
+	imul rax, -1
+	mov [curPlayer], rax
 	call getMoves	;check moves for all unique piece types on given side
 	mov rcx, rax
+	xor rax, rax
 allMoves:		;loop over all players posible moves
 	;do moves
 	call popGame	;pop the game to that move from getMoves
-
-	;print board state for debug
-	;call fillWhiteBoard
-	;call fillBlackBoard
-	;mov rax, [whiteBoard]
-	;or rax, [blackBoard]
-	;call printBitMap
-
 	;recurse
 	call depthNega	;recurse
-	cmp [curScore],rax	;is new score (rbx) higher?
-	jng nextMove
+	;imul rax, -1	;negate returned value from eval
+	;call print
+	cmp rbx,rax	;is new score (rax) higher?
+	jg nextMove
 swapMaxScore:
-	mov [curScore], rax	;swap max with score
+	mov rbx, rax	;swap max with score
 nextMove:
 	dec rcx
 	cmp rcx, 0
 	jne allMoves
-doneNega:
-	call eval	;get an evaluation
+	mov rax, rbx
 	pop rcx
-	imul rax, -1	;negate returned value from eval
+	pop rbx
+	ret
+doneNega:
+	call eval	;get an evaluation, return in rax
+	pop rcx
+	pop rbx
 	ret		;done
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
 ;Sned player to evar in rcx, 1 = white | -1 = black
+;Algorithm is Weight * (numWhite piece - numBlack Piece) * color
 ;------------------
 ;values:
 ;pawns = 1
@@ -179,34 +197,61 @@ doneNega:
 eval:
 	push rbx
 	push rcx
-	cmp qWord [curPlayer], 1
-	jne evalBlack
-	mov rbx, whitePawns		;address of white pawns
-	jmp whiteEval
-evalBlack:
-	mov rbx, blackPawns
-whiteEval:
+	mov rbx, whitePawns
+	;Pawns
 	popcnt rax, [rbx]		;count how many bits are on
-	popcnt rcx, [rbx+8]		;bishop bitBoard
+	popcnt rcx, [rbx + 48]	;sub from how many for black on
+	sub rax, rcx
+
+	;Bishops
+	add rbx, 8
+	popcnt rcx, [rbx]		;bishop bitBoard
 	imul rcx, 3			;bishop weight
 	add rax, rcx			;add it to values
-	popcnt rcx, [rbx+16]		;kights to bitboard
+	popcnt rcx, [rbx+ 48]
+	imul rcx, 3
+	sub rax, rcx
+
+	;Knights
+	add rbx, 8
+	popcnt rcx, [rbx]		;kights to bitboard
 	imul rcx, 3			;knight weight
 	add rax, rcx
-	popcnt rcx, [rbx+24]		;rooks
+	popcnt rcx, [rbx+48]
+	imul rcx, 3
+	sub rax, rcx
+
+	;Castles
+	add rbx, 8
+	popcnt rcx, [rbx]		;rooks
 	imul rcx, 5			;rook value
 	add rax, rcx
-	popcnt rcx, [rbx+32]		;queens
+	popcnt rcx, [rbx+48]
+	imul rcx, 5
+	sub rax, rcx
+
+	;Queens
+	add rbx, 8
+	popcnt rcx, [rbx]		;queens
 	imul rcx, 9			;queen value
 	add rax, rcx
-	popcnt rcx, [rbx+40]		;still have a king?
+	popcnt rcx, [rbx+48]
+	imul rcx, 9
+	sub rax, rcx
+
+	;King
+	add rbx, 8
+	popcnt rcx, [rbx]		;still have a king?
 	imul rcx, 200			;king's value
 	add rax, rcx
-	mov rcx, [curPlayer]
+	popcnt rcx, [rbx+48]
+	imul rcx, 200
+	sub rax, rcx
+	;mul by player color
+	mov rcx, qWord [curPlayer]
 	imul rax, rcx			;negate score if black
 	pop rcx
 	pop rbx
-
 	ret				;end of procedure
 
 ;-------------------------------
@@ -298,12 +343,12 @@ loopfillWhiteBoard:
 getMoves:
 	xor rax, rax
 	call pawnMoves	;figure out pawn moves
-	call bishopMoves
+	;call bishopMoves
 	ret
 
 
 ;--------------------------------
-;Pawn movement AI, send it pawn
+;Pawn movement AI
 ; [curPlayer] = 1 white	player
 ; [curPlayer] = -1 black player
 ;--------------------------------
@@ -313,17 +358,18 @@ pawnMoves:
 	push rax
 	xor rcx, rcx
 	mov rax, 0x8000000000000000
-	mov qWord [numMovs], 0	;set move counter in 0
 	cmp qWord [curPlayer], 1;what player are we?
 	jne blackPawn
 whitePawn:			;moves for white pawn
-	mov rdx, [whitePawns]
+	mov rdx, qWord [whitePawns]
 	cmp rax,0x0		;if we check all the bits
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
 	and rax, rdx		;if there is a pawn there
+	and rax, qWord [topEdge] ;and it is not at top
 	cmp rax, 0
 	je nextWPawn		;check next poss for pawn
+
 	mov qWord [boardBuffer], rax
 
 	not rax			;not our move
@@ -351,7 +397,7 @@ pRAttack:;right push attack
 	;check if piece is on the edge
 	and rax, qWord [rightEdge]
 	cmp rax, 0
-	jne pLAttack			;on right edge can only attack left
+	je pLAttack			;on right edge can only attack left
 
 	;check for right diagonal attack
 	mov rax, qWord [boardBuffer]
@@ -362,9 +408,9 @@ pRAttack:;right push attack
 
 	shl rax, 9		;right attack
 	call fillWhiteBoard
-	call fillBlackBoard
 	not qWord [whiteBoard]
 	and rax, qWord [whiteBoard]
+	call fillBlackBoard
 	and rax, qWord [blackBoard]
 	cmp rax, 0		;if white piece here can't move
 	je pLAttack
@@ -381,7 +427,7 @@ pLAttack:;left push attack
 	;check if piece is on the edge
 	and rax, qWord [leftEdge]
 	cmp rax, 0
-	jne nextWPawn			;on right edge can only attack left
+	je nextWPawn			;on right edge can only attack left
 
 	;check for right diagonal attack
 	mov rax, qWord [boardBuffer]
@@ -412,13 +458,15 @@ nextWPawn:
 	jmp whitePawn		;loop
 
 blackPawn:			;same but for each Black pawn
-	mov rdx, [blackPawns]
+	mov rdx, qWord [blackPawns]
 	cmp rax, 0x0		;if we check all the bits
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
 	and rax, rdx		;if there is a pawn there
+	and rax, qWord [bottomEdge]
 	cmp rax, 0
 	je nextBPawn		;check next poss for pawn
+
 	mov qWord [boardBuffer], rax
 
 	not rax			;not our move
@@ -449,16 +497,15 @@ pbRAttack:;right push attack
 	;check if piece is on the edge
 	and rax, qWord [leftEdge]
 	cmp rax, 0
-	jne pbLAttack			;on right edge can only attack left
+	je pbLAttack			;on right edge can only attack left
 
 	;check for right diagonal attack
-	mov rax, qWord [boardBuffer]
 	mov rdx, [blackPawns]
 	not rax
 	and rdx, rax		;remove current pawn's position
 	not rax
 
-	shr rax, 9		;right attack
+	shr rax, 7		;right attack
 	call fillWhiteBoard
 	call fillBlackBoard
 	not qWord [blackBoard]
@@ -479,16 +526,15 @@ pbLAttack:;left push attack
 	;check if piece is on the edge
 	and rax, qWord [rightEdge]
 	cmp rax, 0
-	jne nextBPawn			;on right edge can only attack left
+	je nextBPawn			;on right edge can only attack left
 
 	;check for right diagonal attack
-	mov rax, qWord [boardBuffer]
-	mov rdx, [blackPawns]
+	mov rdx, qWord [blackPawns]
 	not rax
 	and rdx, rax		;remove current pawn's position
 	not rax
 
-	shr rax, 7		;left attack
+	shr rax, 9		;left attack
 	call fillWhiteBoard
 	call fillBlackBoard
 	not qWord [blackBoard]
@@ -510,6 +556,7 @@ nextBPawn:
 	jmp blackPawn		;loop
 donePawnMove:
 	pop rax
+	xor rax, rax
 	add rax, rcx		;return number of pawn moves
 	pop rbx
 	pop rcx

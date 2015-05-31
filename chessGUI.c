@@ -22,6 +22,7 @@ extern long long whitePawns;
 extern long long aiPlayer;  //current player AI uses
 
 extern ai();
+extern aiMove();
 
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
@@ -39,13 +40,15 @@ char path[1024]; //img folder path
 char tempPath[1024];
 
 
+void addPiecesGui();
+
 //do a move
 void move(){
     printf("Moved\n");
     //ai to move
     ai();
     loadLayout();
-    addPieces();
+    addPiecesGui();
     aiPlayer *= -1;
 }
 
@@ -130,7 +133,7 @@ int initGui(int   argc, char *argv[])
 
 
     //add the pieces to board
-    addPieces();
+    addPiecesGui();
 
     // button = gtk_button_new_with_label("Print Text");
     // gtk_widget_show(button);
@@ -155,7 +158,7 @@ int initGui(int   argc, char *argv[])
 }
 
 //add pieces to board in gui from global bitmaps
-void addPieces(){
+void addPiecesGui(){
 
 
     int i, j;
