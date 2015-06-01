@@ -44,11 +44,12 @@ extern pawnMoves
 extern bishopMoves
 extern knightMoves
 extern castleMoves
+	;sub tree depth from eval, sooner is better
 
 extern lastMovA
 
 section .data
-	aiDepth		dq	4	;depth for negaMax tree
+	aiDepth		dq	3	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -129,7 +130,7 @@ loopai:
 	cmp rax, qWord [curScore]
 	jng finalScore
 	mov qWord [curScore], rax
-	call print
+	;call print
 	call pushWinningMove
 finalScore:
 	pop rax
@@ -137,9 +138,9 @@ finalScore:
 	cmp rax, 0					;check every piece?
 	jne loopai
 	;if checkMate don't do anything
-	cmp qWord [curScore], -1900
+	cmp qWord [curScore], -1500
 	jl checkMate
-	cmp qWord [curScore], 1900
+	cmp qWord [curScore], 1500
 	jg checkMate
 	call popWinningMove			;make the move
 	ret
@@ -157,8 +158,9 @@ NegaMax:
 	add rbp, 8
 	mov rdx, [rbp]
 
+	dec rcx
 	cmp rcx, 0
-	jle doneNegaMax
+	je doneNegaMax
 
 	;minimum score
 	push rdx
@@ -180,7 +182,6 @@ negaLoop:
 	push rdx
 	push qWord [curScore]   ;save score
 	imul rdx, -1			;switch player
-	dec rcx
 	push rdx
 	push rcx					;push parameter
 	call NegaMax
