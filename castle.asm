@@ -122,6 +122,8 @@ topLoop:
     mov rdx, qWord [boardBuffer]
     cmp qWord [pieceDie], 1
     je Down
+    cmp qWord [kingMove], 1
+    je Down
     ;if we made it here try farther
     jmp topLoop
 
@@ -162,6 +164,8 @@ downLoop:
     mov rdx, qWord [boardBuffer]
     cmp qWord [pieceDie], 1
     je Right
+    cmp qWord [kingMove], 1
+    je Right
     ;if we made it here try farther
     jmp downLoop
 
@@ -201,6 +205,8 @@ rightLoop:
     mov rdx, qWord [boardBuffer]
     cmp qWord [pieceDie], 1
     je Left
+    cmp qWord [kingMove], 1
+    je Left
     ;if we made it here try farther
     jmp rightLoop
 
@@ -238,6 +244,8 @@ leftLoop:
     pop rcx
     mov rdx, qWord [boardBuffer]
     cmp qWord [pieceDie], 1
+    je nextCastle
+    cmp qWord [kingMove], 1
     je nextCastle
     ;if we made it here try farther
     jmp leftLoop

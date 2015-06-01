@@ -48,7 +48,7 @@ extern castleMoves
 extern lastMovA
 
 section .data
-	aiDepth		dq	5	;depth for negaMax tree
+	aiDepth		dq	2	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -137,10 +137,10 @@ finalScore:
 	cmp rax, 0					;check every piece?
 	jne loopai
 	;if checkMate don't do anything
-	cmp qWord [curScore], -3000
-	je checkMate
-	cmp qWord [curScore], 3000
-	je checkMate
+	cmp qWord [curScore], -1900
+	jl checkMate
+	cmp qWord [curScore], 1900
+	jg checkMate
 	call popWinningMove			;make the move
 	ret
 checkMate:
@@ -189,6 +189,7 @@ negaLoop:
 	pop qWord [curScore]	;get score back
 	pop rdx
 	imul rax, -1
+	;is new score higer? if so then swap
 	cmp rax, qWord [curScore]	;is nex score greater?
 	jng	keepScore
 	mov qWord [curScore], rax
@@ -322,12 +323,12 @@ beginRemoval:
 	push rax
 	and rax, rcx
 	cmp rax, 0
+	pop rax
 	je checkNextPieceRemove
 	xor rcx, rax
 	mov qWord [pieceDie], 1	;mark that a piece died
 checkNextPieceRemove:
 	mov [rbx], rcx
-	pop rax
 	add rbx, 8		;move to the next piece type
 	dec rdx			;dec loop
 	cmp rdx, 0		;end of loop?
@@ -406,10 +407,10 @@ getMoves:
 	;than one step at a time
 	mov qWord [kingMove], 1
 	push qWord whiteKing
-	;call castleMoves
+	call castleMoves
 	add rsp, 8
 	push qWord whiteKing
-	;call bishopMoves
+	call bishopMoves
 	add rsp, 8
 	mov qWord [kingMove], 0
 
@@ -433,8 +434,6 @@ getMoves:
     push qWord whiteCastles ;we are passing castle bitboard
 	call castleMoves ;can be used with kings and queens too
 	add rsp, 8
-
-
 
 	call pawnMoves		;figure out pawn moves
 

@@ -16,6 +16,8 @@ extern bottomEdge
 extern rightEdge
 extern leftEdge
 
+extern kingMove
+
 extern printBitMap
 extern print
 
@@ -119,6 +121,8 @@ tRightLoop:
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
 	je topLeft
+	cmp qWord [kingMove], 1
+	je topLeft
 	;if we made it here try farther
 	jmp tRightLoop
 
@@ -160,6 +164,8 @@ tLeftLoop:
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
 	je botLeft
+	cmp qWord [kingMove], 1
+	je botLeft
 	;if we made it here try farther
 	jmp tLeftLoop
 
@@ -200,6 +206,8 @@ bLeftLoop:
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
 	je botRight
+	cmp qWord [kingMove], 1
+	je botRight
 	;if we made it here try farther
 	jmp bLeftLoop
 
@@ -239,6 +247,8 @@ bRightLoop:
 	pop rcx
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
+	je nextBishop
+	cmp qWord [kingMove], 1
 	je nextBishop
 	;if we made it here try farther
 	jmp bRightLoop
