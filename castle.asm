@@ -100,7 +100,7 @@ topLoop:
     call [fillBoard]
     push rax
     push rdx
-    mov rdx, [board]  ;pass address to knight board
+    mov rdx, [board]  ;pass address to piece's board
     and rax, [rdx]      ;acess data
     pop rdx
     cmp rax, 0          ;check if same color piece here
@@ -202,7 +202,7 @@ rightLoop:
     cmp qWord [pieceDie], 1
     je Left
     ;if we made it here try farther
-    jmp downLoop
+    jmp rightLoop
 
     Left:
     pop rax
@@ -240,7 +240,7 @@ leftLoop:
     cmp qWord [pieceDie], 1
     je nextCastle
     ;if we made it here try farther
-    jmp downLoop
+    jmp leftLoop
 
     nextCastle:
         pop rax

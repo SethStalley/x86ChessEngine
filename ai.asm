@@ -48,7 +48,7 @@ extern castleMoves
 extern lastMovA
 
 section .data
-	aiDepth		dq	2	;depth for negaMax tree
+	aiDepth		dq	5	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -266,20 +266,23 @@ eval:
 	imul rcx, 2000
 	sub rax, rcx
 
+	;calculate mobility as part of EVAL
 	push qWord [curPlayer]
 	push qWord [lastMovA]
 	push rax
 	mov qWord [curPlayer], 1
 	call numMoves			;get num moves posible
 	mov rcx, rax
+	pop rax
+	add rax, rcx			;add mobility weight
+	push rax
 	mov qWord [curPlayer], -1	;now for black player
 	call numMoves			;num of moves
-	sub rcx, rax			;sub num black moves
+	mov rcx, rax			;sub num black moves
 	pop rax
+	sub rax, rcx
 	pop qWord [lastMovA]
 	pop qWord [curPlayer]
-	add rax, rcx
-;call print
 
 	pop rcx
 	pop rbx
@@ -326,7 +329,6 @@ beginRestoreRemoved:
 	inc rdx
 	cmp rdx, 6
 	jne beginRestoreRemoved
-	mov qWord [pieceDie], 1
 	pop rcx
 	pop rbx
 	pop rdx
@@ -393,12 +395,20 @@ getMoves:
 	;than one step at a time
 	mov qWord [kingMove], 1
 	push qWord whiteKing
-	call castleMoves
+	;call castleMoves
 	add rsp, 8
 	push qWord whiteKing
-	call bishopMoves
+	;call bishopMoves
 	add rsp, 8
 	mov qWord [kingMove], 0
+
+	;queen move, use castle and bishop rules together
+	push qWord whiteQueens
+	call castleMoves
+	add rsp, 8
+	push qWord whiteQueens
+	call bishopMoves
+	add rsp, 8
 
 	;knight Moves
 	call knightMoves
@@ -413,13 +423,7 @@ getMoves:
 	call castleMoves ;can be used with kings and queens too
 	add rsp, 8
 
-	;queen move, use castle and bishop rules together
-	push qWord whiteQueens
-	call castleMoves
-	add rsp, 8
-	push qWord whiteQueens
-	call bishopMoves
-	add rsp, 8
+
 
 	call pawnMoves		;figure out pawn moves
 

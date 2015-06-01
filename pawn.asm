@@ -138,7 +138,7 @@ pDoblePush:
     and rdx, rax		;remove current pawn's position
     not rax
 
-    shl rax, 8		;doble push foward
+    shl rax, 8  		;doble push foward
     call fillWhiteBoard
     call fillBlackBoard
     not qWord [blackBoard]
