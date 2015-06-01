@@ -40,6 +40,7 @@ extern popWinningMove
 extern pawnMoves
 extern bishopMoves
 extern knightMoves
+extern castleMoves
 
 extern lastMovA
 
@@ -377,6 +378,11 @@ getMoves:
 	call pawnMoves		;figure out pawn moves
 	call knightMoves
 	;call bishopMoves
+	;castle moves
+    push qWord whiteCastles ;we are passing castle bitboard
+	call castleMoves ;can be used with queens too
+	add rsp, 8
+
 	pop rbx
 	pop rdx
 	ret
