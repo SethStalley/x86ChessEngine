@@ -17,6 +17,10 @@ extern bottomEdge
 extern rightEdge
 extern leftEdge
 
+extern firstWhitePawnRow, fistBlackPawnRow
+
+extern print
+
 ;--------------------------------
 ;Pawn movement AI
 ; [curPlayer] = 1 white	player
@@ -97,7 +101,7 @@ pLAttack:;left push attack
 	;check if piece is on the edge
 	and rax, qWord [leftEdge]
 	cmp rax, 0
-	je nextWPawn			;on right edge can only attack left
+	je pDoblePush			;on right edge can only attack left
 
 	;check for right diagonal attack
 	mov rax, qWord [boardBuffer]
@@ -113,7 +117,7 @@ pLAttack:;left push attack
 	and rax, qWord [whiteBoard]
 	and rax, qWord [blackBoard]
 	cmp rax, 0		;if white piece here can't move
-	je nextWPawn
+	je pDoblePush
 	;store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
@@ -121,6 +125,38 @@ pLAttack:;left push attack
 	mov [whitePawns], rdx
 	call removePiece	;remove black piece
 	pop qWord [whitePawns]
+
+pDoblePush:
+    mov rax, qWord [boardBuffer]	;get original piece to move back
+    ;check if piece is on the initial row
+    and rax, qWord [firstWhitePawnRow]
+    cmp rax, 0
+    je nextWPawn			;on right edge can only attack left
+
+    mov rdx, qWord [whitePawns]
+    not rax
+    and rdx, rax		;remove current pawn's position
+    not rax
+
+    shl rax, 8		;doble push foward
+    call fillWhiteBoard
+    call fillBlackBoard
+    not qWord [blackBoard]
+    not qWord [whiteBoard]
+    and rax, qWord [blackBoard]
+    and rax, qWord [whiteBoard]
+    shl rax, 8		;doble push foward
+    and rax, qWord [blackBoard]
+    and rax, qWord [whiteBoard]
+    cmp rax, 0		;if black piece here can't move
+    je nextWPawn
+    ;store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    push qWord [whitePawns]
+    mov [whitePawns], rdx
+    call pushGame	;remove black piece
+    pop qWord [whitePawns]
 
 nextWPawn:
 	pop rax
@@ -196,7 +232,7 @@ pbLAttack:;left push attack
 	;check if piece is on the edge
 	and rax, qWord [rightEdge]
 	cmp rax, 0
-	je nextBPawn			;on right edge can only attack left
+	je pbDoblePush			;on right edge can only attack left
 
 	;check for right diagonal attack
 	mov rdx, qWord [blackPawns]
@@ -211,7 +247,7 @@ pbLAttack:;left push attack
 	and rax, qWord [blackBoard]
 	and rax, qWord [whiteBoard]
 	cmp rax, 0		;if black piece here can't move
-	je nextBPawn
+	je pbDoblePush
 	;store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
@@ -219,6 +255,38 @@ pbLAttack:;left push attack
 	mov [blackPawns], rdx
 	call removePiece	;remove black piece
 	pop qWord [blackPawns]
+
+pbDoblePush:
+    mov rax, qWord [boardBuffer]	;get original piece to move back
+    ;check if piece is on the initial row
+    and rax, qWord [fistBlackPawnRow]
+    cmp rax, 0
+    je nextBPawn			;on right edge can only attack left
+
+    mov rdx, qWord [blackPawns]
+    not rax
+    and rdx, rax		;remove current pawn's position
+    not rax
+
+    shr rax, 8		;doble push foward
+    call fillWhiteBoard
+    call fillBlackBoard
+    not qWord [blackBoard]
+    not qWord [whiteBoard]
+    and rax, qWord [blackBoard]
+    and rax, qWord [whiteBoard]
+    shr rax, 8		;doble push foward
+    and rax, qWord [blackBoard]
+    and rax, qWord [whiteBoard]
+    cmp rax, 0		;if black piece here can't move
+    je nextBPawn
+    ;store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    push qWord [blackPawns]
+    mov [blackPawns], rdx
+    call pushGame	;remove black piece
+    pop qWord [blackPawns]
 
 nextBPawn:
 	pop rax

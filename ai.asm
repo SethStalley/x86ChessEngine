@@ -30,6 +30,7 @@ global pieceDie
 global kingMove
 
 global knightTop, knightBottom, knightLeft, knightRight
+global firstWhitePawnRow, fistBlackPawnRow
 
 extern print
 extern printSpace
@@ -72,6 +73,9 @@ section .data
 	knightBottom dq	0xFFFFFFFFFFFF0000
 	knightLeft	dq	0xFCFCFCFCFCFCFCFC
 	knightRight	dq	0x3F3F3F3F3F3F3F3F
+
+	firstWhitePawnRow dq 0xff00
+	fistBlackPawnRow dq 0xff000000000000
 
 	;game helper flags
 	kingMove	dq	0		;if it is a king move
@@ -275,7 +279,7 @@ eval:
 	pop qWord [lastMovA]
 	pop qWord [curPlayer]
 	add rax, rcx
-call print
+;call print
 
 	pop rcx
 	pop rbx

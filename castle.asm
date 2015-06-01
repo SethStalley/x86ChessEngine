@@ -90,7 +90,6 @@ Castle:
     ;check for the move
     push rax
 topLoop:
-
     and rax, [topEdge]    ;make sure it is not on top edge
     cmp rax, 0
     je Down        ;is a friendly piece already here?
