@@ -10,7 +10,6 @@ Features:
     
 What doesn't Work:
  * Gui 
- * bishops moves
  * castling
  * pawn passant
  * pawn promotion
