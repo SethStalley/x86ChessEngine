@@ -107,6 +107,7 @@ ai:
 	mov rdx, qWord [aiPlayer]
 	mov qWord [curPlayer], rdx
 	mov qWord [curScore], -300
+	call pushGame
 	call getMoves
 loopai:
 	call popGame
@@ -128,15 +129,25 @@ loopai:
 	cmp rax, qWord [curScore]
 	jng finalScore
 	mov qWord [curScore], rax
+	call print
 	call pushWinningMove
 finalScore:
 	pop rax
 	dec rax
 	cmp rax, 0					;check every piece?
 	jne loopai
+	;if checkMate don't do anything
+	cmp qWord [curScore], -300
+	je checkMate
+	cmp qWord [curScore], 300
+	je checkMate
 	call popWinningMove			;make the move
 	ret
+checkMate:
+	call popGame
+	ret
 
+;this is our AI, nega max recursive algorithm
 NegaMax:
 	push rbp					;save base pointer
 
