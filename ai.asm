@@ -106,7 +106,7 @@ section .text
 ai:
 	mov rdx, qWord [aiPlayer]
 	mov qWord [curPlayer], rdx
-	mov qWord [curScore], -300
+	mov qWord [curScore], -3000
 	call pushGame
 	call getMoves
 loopai:
@@ -137,9 +137,9 @@ finalScore:
 	cmp rax, 0					;check every piece?
 	jne loopai
 	;if checkMate don't do anything
-	cmp qWord [curScore], -300
+	cmp qWord [curScore], -3000
 	je checkMate
-	cmp qWord [curScore], 300
+	cmp qWord [curScore], 3000
 	je checkMate
 	call popWinningMove			;make the move
 	ret
@@ -162,7 +162,7 @@ NegaMax:
 
 	;minimum score
 	push rdx
-	mov rdx, -300		;base score
+	mov rdx, -3000		;base score
 	mov qWord [curScore], rdx
 	pop rdx
 
