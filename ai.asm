@@ -45,7 +45,7 @@ extern castleMoves
 extern lastMovA
 
 section .data
-	aiDepth		dq	2	;depth for negaMax tree
+	aiDepth		dq	6	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -375,13 +375,29 @@ getMoves:
 	push rdx
 	push rbx
 	xor rax, rax
-	call pawnMoves		;figure out pawn moves
+
+	;knight Moves
 	call knightMoves
-	;call bishopMoves
+
+	;bishop moves
+	push qWord whiteBishops	;addres to bishop bitmap
+	call bishopMoves
+	add rsp, 8
+
 	;castle moves
     push qWord whiteCastles ;we are passing castle bitboard
-	call castleMoves ;can be used with queens too
+	call castleMoves ;can be used with kings and queens too
 	add rsp, 8
+
+	;queen move, use castle and bishop rules together
+	push qWord whiteQueens	
+	call castleMoves
+	add rsp, 8
+	push qWord whiteQueens
+	call bishopMoves
+	add rsp, 8
+
+	call pawnMoves		;figure out pawn moves
 
 	pop rbx
 	pop rdx

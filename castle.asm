@@ -241,7 +241,6 @@ leftLoop:
     ;if we made it here try farther
     jmp downLoop
 
-
     nextCastle:
         pop rax
         shr rax, 1		;check next poss for pawn
