@@ -11,14 +11,9 @@ Features:
 What doesn't Work:
  * Gui 
  * bishops moves
- * king moves
- * queen moves
- * knight moves
- * castle moves
  * castling
  * pawn passant
  * pawn promotion
- * initial pawn doble move
  * game starting conditions
   
 What To Do:
@@ -26,7 +21,6 @@ What To Do:
  * Decrease memory usage when moving/undoing moves 
  * Add GUI move verification, and user msg's
  * Add opening book
- * Improve eval by adding positioning weight
   
 Running  
 ====
