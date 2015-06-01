@@ -39,6 +39,7 @@ printSpace:
 	ret
 
 printBitMap:		;print a bitmap stored in rax
+	push rbx
 	push rcx
 	push rsi
 	push rdi
@@ -76,4 +77,5 @@ donePrintBitMap:
 	pop rdi
 	pop rsi
 	pop rcx
+	pop rbx
 	ret
