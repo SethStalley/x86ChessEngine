@@ -18,6 +18,8 @@ extern bottomEdge
 extern rightEdge
 extern leftEdge
 
+extern kingMove
+
 extern printBitMap
 extern print
 

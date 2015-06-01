@@ -27,6 +27,8 @@ global whiteBoard
 global blackBoard
 global pieceDie
 
+global kingMove
+
 global knightTop, knightBottom, knightLeft, knightRight
 
 extern print
@@ -45,7 +47,7 @@ extern castleMoves
 extern lastMovA
 
 section .data
-	aiDepth		dq	6	;depth for negaMax tree
+	aiDepth		dq	2	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
@@ -70,6 +72,9 @@ section .data
 	knightBottom dq	0xFFFFFFFFFFFF0000
 	knightLeft	dq	0xFCFCFCFCFCFCFCFC
 	knightRight	dq	0x3F3F3F3F3F3F3F3F
+
+	;game helper flags
+	kingMove	dq	0		;if it is a king move
 
 					;bitboards for white
 	whitePawns 		dq 	0xff00
@@ -205,67 +210,72 @@ eval:
 	push rcx
 	mov rbx, whitePawns
 	;Pawns
-	popcnt rax, [rbx]		;count how many bits are on
-	popcnt rcx, [rbx + 48]	;sub from how many for black on
+	popcnt rcx, [rbx]		;bishop bitBoard
+	imul rcx, 10		;bishop weight
+	add rax, rcx			;add it to values
+	popcnt rcx, [rbx+ 48]
+	imul rcx, 10
 	sub rax, rcx
 
 	;Bishops
 	add rbx, 8
 	popcnt rcx, [rbx]		;bishop bitBoard
-	imul rcx, 3			;bishop weight
+	imul rcx, 30			;bishop weight
 	add rax, rcx			;add it to values
 	popcnt rcx, [rbx+ 48]
-	imul rcx, 3
+	imul rcx, 30
 	sub rax, rcx
 
 	;Knights
 	add rbx, 8
 	popcnt rcx, [rbx]		;kights to bitboard
-	imul rcx, 3			;knight weight
+	imul rcx, 30			;knight weight
 	add rax, rcx
 	popcnt rcx, [rbx+48]
-	imul rcx, 3
+	imul rcx, 30
 	sub rax, rcx
 
 	;Castles
 	add rbx, 8
 	popcnt rcx, [rbx]		;rooks
-	imul rcx, 5			;rook value
+	imul rcx, 50			;rook value
 	add rax, rcx
 	popcnt rcx, [rbx+48]
-	imul rcx, 5
+	imul rcx, 50
 	sub rax, rcx
 
 	;Queens
 	add rbx, 8
 	popcnt rcx, [rbx]		;queens
-	imul rcx, 9			;queen value
+	imul rcx, 90			;queen value
 	add rax, rcx
 	popcnt rcx, [rbx+48]
-	imul rcx, 9
+	imul rcx, 90
 	sub rax, rcx
 
 	;King
 	add rbx, 8
 	popcnt rcx, [rbx]		;still have a king?
-	imul rcx, 200			;king's value
+	imul rcx, 2000			;king's value
 	add rax, rcx
 	popcnt rcx, [rbx+48]
-	imul rcx, 200
+	imul rcx, 2000
 	sub rax, rcx
 
 	push qWord [curPlayer]
+	push qWord [lastMovA]
 	push rax
 	mov qWord [curPlayer], 1
-	;call numMoves			;get num moves posible
+	call numMoves			;get num moves posible
 	mov rcx, rax
 	mov qWord [curPlayer], -1	;now for black player
-	;call numMoves			;num of moves
+	call numMoves			;num of moves
 	sub rcx, rax			;sub num black moves
 	pop rax
+	pop qWord [lastMovA]
 	pop qWord [curPlayer]
-	;shr rcx, 3			;get (1/2)^3 value
-	;add rax, rcx
+	add rax, rcx
+call print
 
 	pop rcx
 	pop rbx
@@ -361,9 +371,7 @@ loopfillWhiteBoard:
 ;--------------------------------
 numMoves:
 	push rdx
-	mov rdx, [lastMovA]
 	call getMoves
-	mov [lastMovA], rdx
 	pop rdx
 
 
@@ -375,6 +383,18 @@ getMoves:
 	push rdx
 	push rbx
 	xor rax, rax
+
+	;KING move, use castle and bishop rules together
+	;also turn on kingMove flag so we don't more more
+	;than one step at a time
+	mov qWord [kingMove], 1
+	push qWord whiteKing
+	call castleMoves
+	add rsp, 8
+	push qWord whiteKing
+	call bishopMoves
+	add rsp, 8
+	mov qWord [kingMove], 0
 
 	;knight Moves
 	call knightMoves
@@ -390,7 +410,7 @@ getMoves:
 	add rsp, 8
 
 	;queen move, use castle and bishop rules together
-	push qWord whiteQueens	
+	push qWord whiteQueens
 	call castleMoves
 	add rsp, 8
 	push qWord whiteQueens
