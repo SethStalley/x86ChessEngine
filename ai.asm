@@ -48,7 +48,7 @@ extern castleMoves
 extern lastMovA
 
 section .data
-	aiDepth		dq	2	;depth for negaMax tree
+	aiDepth		dq	4	;depth for negaMax tree
 	aiPlayer	dq 	1	;if ai is black/white 1 = white -1 = black
 
 	curDepth	dq 	0	;used by negaMax during loop
