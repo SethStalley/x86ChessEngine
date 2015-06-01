@@ -193,9 +193,6 @@ Knight:
     pop rax
     push rax
 
-    pop rax
-    push rax
-
     and rax, [rightEdge]    ;make sure we are not on right edge
     and rax, [knightBottom]    ;make sure it is a knight safe distance
     cmp rax, 0
@@ -232,6 +229,145 @@ Knight:
     ;check for a right up move
     RightUp:
     pop rax
+    push rax
+
+    and rax, [knightRight]    ;make sure we are not on right edge
+    and rax, [topEdge]    ;make sure it is a knight safe distance
+    cmp rax, 0
+    je RightDown        ;is a friendly piece already here?
+
+    ;do the move
+    shl rax, 10        ;two places forward
+    ;valid move?
+    call [fillBoard]
+    push rax
+    push rdx
+    mov rdx, [board]  ;pass address to knight board
+    and rax, [rdx]      ;acess data
+    pop rdx
+    cmp rax, 0          ;check if same color piece here
+    pop rax
+    jne RightDown       ;is a friendly piece already here?
+
+    ;if not friendly here, store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    ;store the move
+    push rcx
+    mov rcx, [knights]  ;push pointer to knigt bitmap
+    push qWord [rcx]          ;push the bitmap
+    ;apply move to the knight bitmap
+    mov [rcx], rdx
+    call removePiece	;remove black piece
+    pop qWord [rcx]           ;get it back
+    pop rcx
+    mov rdx, [boardBuffer]
+
+    RightDown:
+    pop rax
+    push rax
+
+    and rax, [knightRight]    ;make sure we are not on right edge
+    and rax, [bottomEdge]    ;make sure it is a knight safe distance
+    cmp rax, 0
+    je LeftUp        ;is a friendly piece already here?
+
+    ;do the move
+    shr rax, 6        ;two places forward
+    ;valid move?
+    call [fillBoard]
+    push rax
+    push rdx
+    mov rdx, [board]  ;pass address to knight board
+    and rax, [rdx]      ;acess data
+    pop rdx
+    cmp rax, 0          ;check if same color piece here
+    pop rax
+    jne LeftUp       ;is a friendly piece already here?
+
+    ;if not friendly here, store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    ;store the move
+    push rcx
+    mov rcx, [knights]  ;push pointer to knigt bitmap
+    push qWord [rcx]          ;push the bitmap
+    ;apply move to the knight bitmap
+    mov [rcx], rdx
+    call removePiece	;remove black piece
+    pop qWord [rcx]           ;get it back
+    pop rcx
+    mov rdx, [boardBuffer]
+
+    LeftUp:
+    pop rax
+    push rax
+
+    and rax, [knightLeft]    ;make sure we are not on right edge
+    and rax, [topEdge]    ;make sure it is a knight safe distance
+    cmp rax, 0
+    je LeftDown        ;is a friendly piece already here?
+
+    ;do the move
+    shl rax, 6        ;two places forward
+    ;valid move?
+    call [fillBoard]
+    push rax
+    push rdx
+    mov rdx, [board]  ;pass address to knight board
+    and rax, [rdx]      ;acess data
+    pop rdx
+    cmp rax, 0          ;check if same color piece here
+    pop rax
+    jne LeftDown       ;is a friendly piece already here?
+
+    ;if not friendly here, store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    ;store the move
+    push rcx
+    mov rcx, [knights]  ;push pointer to knigt bitmap
+    push qWord [rcx]          ;push the bitmap
+    ;apply move to the knight bitmap
+    mov [rcx], rdx
+    call removePiece	;remove black piece
+    pop qWord [rcx]           ;get it back
+    pop rcx
+    mov rdx, [boardBuffer]
+
+    LeftDown:
+    pop rax
+
+    and rax, [knightLeft]    ;make sure we are not on right edge
+    and rax, [bottomEdge]    ;make sure it is a knight safe distance
+    cmp rax, 0
+    je nextKnight        ;is a friendly piece already here?
+
+    ;do the move
+    shr rax, 10        ;two places forward
+    ;valid move?
+    call [fillBoard]
+    push rax
+    push rdx
+    mov rdx, [board]  ;pass address to knight board
+    and rax, [rdx]      ;acess data
+    pop rdx
+    cmp rax, 0          ;check if same color piece here
+    pop rax
+    jne nextKnight       ;is a friendly piece already here?
+
+    ;if not friendly here, store move
+    inc rcx			;if valid move inc move counter
+    or rdx, rax
+    ;store the move
+    push rcx
+    mov rcx, [knights]  ;push pointer to knigt bitmap
+    push qWord [rcx]          ;push the bitmap
+    ;apply move to the knight bitmap
+    mov [rcx], rdx
+    call removePiece	;remove black piece
+    pop qWord [rcx]           ;get it back
+    pop rcx
 
     nextKnight:
         pop rax

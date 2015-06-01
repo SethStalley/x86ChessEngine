@@ -114,14 +114,12 @@ loopai:
 	pop rdx
 	pop qWord [curScore]
 	imul rax, -1
-call print
-	imul rdx, -1
+	imul rdx, -1				;change player
 	cmp rax, qWord [curScore]
 	jng finalScore
 	mov qWord [curScore], rax
 	call pushWinningMove
 finalScore:
-	call print
 	pop rax
 	dec rax
 	cmp rax, 0					;check every piece?
