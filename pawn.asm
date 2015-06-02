@@ -2,6 +2,8 @@ global pawnMoves
 
 extern curPlayer
 extern whitePawns
+extern whiteQueens
+extern blackQueens
 extern blackPawns
 extern boardBuffer
 
@@ -21,6 +23,9 @@ extern firstWhitePawnRow, fistBlackPawnRow
 
 extern print
 
+section .data
+	pawnPromote dq 0	;if we need promote pawn flag
+section .text
 ;--------------------------------
 ;Pawn movement AI
 ; [curPlayer] = 1 white	player
@@ -32,6 +37,7 @@ pawnMoves:
 	push rax
 	xor rcx, rcx
 	mov rax, 0x8000000000000000
+	mov qWord [pawnPromote], 0 ;pawn promotion flag
 	cmp qWord [curPlayer], 1;what player are we?
 	jne blackPawn
 whitePawn:			;moves for white pawn
@@ -40,16 +46,25 @@ whitePawn:			;moves for white pawn
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
 	and rax, rdx		;if there is a pawn there
-	and rax, qWord [topEdge] ;and it is not at top
 	cmp rax, 0
 	je nextWPawn		;check next poss for pawn
 
+wPawnFoward:
 	mov qWord [boardBuffer], rax
 
 	not rax			;not our move
 	and rdx, rax		;remove current pawn position
 	not rax			;get move back
 	shl rax, 0x8		;move pawn one foward
+
+	;check pawn promotion
+	push rax
+	and rax, [topEdge]
+	cmp rax, 0
+	pop rax
+	jne wPawnNoPromotion
+	mov qWord [pawnPromote], 1 ; we need to promote pawn
+wPawnNoPromotion:
 	call fillWhiteBoard
 	not qWord [whiteBoard]
 	and rax, qWord [whiteBoard]	;if W piece here we can't move there
@@ -60,11 +75,21 @@ whitePawn:			;moves for white pawn
 	je pRAttack
 	;store move
 	inc rcx			;pawn move is valid inc move counter
-	or rdx, rax		;apply the move to the pawn's bitmap
 	push qWord [whitePawns] ;save the current pawns
+	push qWord [whiteQueens]
+	or rdx, rax		;apply the move to the pawn's bitmap
 	mov [whitePawns], rdx	;make the pawnMove
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q1
+	mov rdx, [whiteQueens]
+	or rdx, rax
+	mov [whiteQueens], rdx
+q1:
 	call pushGame		;save the game move for the ai
+	pop qWord [whiteQueens]
 	pop qWord [whitePawns]  ;restore them to check other pawn
+
 pRAttack:;right push attack
 	;load move back up
 	mov rax, qWord [boardBuffer]	;get original piece to move back
@@ -92,8 +117,17 @@ pRAttack:;right push attack
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	push qWord [whitePawns]
+	push qWord [whiteQueens]
 	mov [whitePawns], rdx
-	call removePiece	;remove black piece & pushes game
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q2
+	mov rdx, [whiteQueens]
+	or rdx, rax
+	mov [whiteQueens], rdx
+q2:
+	call removePiece	;remove black piece
+	pop qWord [whiteQueens]
 	pop qWord [whitePawns]
 pLAttack:;left push attack
 	;load move back up
@@ -122,8 +156,17 @@ pLAttack:;left push attack
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	push qWord [whitePawns]
+	push qWord [whiteQueens]
 	mov [whitePawns], rdx
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q3
+	mov rdx, [whiteQueens]
+	or rdx, rax
+	mov [whiteQueens], rdx
+q3:
 	call removePiece	;remove black piece
+	pop qWord [whiteQueens]
 	pop qWord [whitePawns]
 
 pDoblePush:
@@ -169,16 +212,23 @@ blackPawn:			;same but for each Black pawn
 	je donePawnMove		;check for all pawns
 	push rax		;save bit being checked
 	and rax, rdx		;if there is a pawn there
-	and rax, qWord [bottomEdge]
 	cmp rax, 0
 	je nextBPawn		;check next poss for pawn
 
 	mov qWord [boardBuffer], rax
-
 	not rax			;not our move
 	and rdx, rax		;remove current pawn position
 	not rax			;get move back
 	shr rax, 0x8		;move pawn one foward
+
+	;check pawn promotion
+	push rax
+	and rax, [bottomEdge]
+	cmp rax, 0
+	pop rax
+	jne bPawnNoPromotion
+	mov qWord [pawnPromote], 1 ; we need to promote pawn
+bPawnNoPromotion:
 
 	call fillBlackBoard
 	call fillWhiteBoard
@@ -191,11 +241,19 @@ blackPawn:			;same but for each Black pawn
 
 	inc rcx			;pawn move is valid inc move counter
 	or rdx, rax		;apply the move to the pawn's bitmap
-	push qWord [blackPawns] ;save the current pawns
-	not qWord [blackBoard]
-	mov [blackPawns], rdx	;make the pawnMove
-	call pushGame		;save the game move for the ai
-	pop qWord [blackPawns]  ;restore them to check other pawn
+	push qWord [blackPawns]
+	push qWord [blackQueens]
+	mov [blackPawns], rdx
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q4
+	mov rdx, [blackQueens]
+	or rdx, rax
+	mov [blackQueens], rdx
+q4:
+	call removePiece	;remove black piece
+	pop qWord [blackQueens]
+	pop qWord [blackPawns]
 
 pbRAttack:;right push attack
 	;load move back up
@@ -223,8 +281,17 @@ pbRAttack:;right push attack
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	push qWord [blackPawns]
+	push qWord [blackQueens]
 	mov [blackPawns], rdx
-	call removePiece	;remove white piece
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q5
+	mov rdx, [blackQueens]
+	or rdx, rax
+	mov [blackQueens], rdx
+q5:
+	call removePiece	;remove black piece
+	pop qWord [blackQueens]
 	pop qWord [blackPawns]
 pbLAttack:;left push attack
 	;load move back up
@@ -252,8 +319,17 @@ pbLAttack:;left push attack
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	push qWord [blackPawns]
+	push qWord [blackQueens]
 	mov [blackPawns], rdx
+	;check for pawn promotion and do if
+	cmp qWord [pawnPromote], 1
+	jne q6
+	mov rdx, [blackQueens]
+	or rdx, rax
+	mov [blackQueens], rdx
+q6:
 	call removePiece	;remove black piece
+	pop qWord [blackQueens]
 	pop qWord [blackPawns]
 
 pbDoblePush:
