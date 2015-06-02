@@ -121,10 +121,12 @@ void callback( GtkWidget *widget,
 
 
 //int initGui( int   argc, char *argv[] )
-int initGui(int   argc, char *argv[])
+int main(int argc, char *argv[])
 {
+    printf("%d", argc);
     aiPlayer = 1;
 
+	gtk_init(&argc, &argv);
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");

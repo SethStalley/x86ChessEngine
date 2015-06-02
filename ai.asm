@@ -71,7 +71,7 @@ section .data
 	bottomEdge	dq	0xFFFFFFFFFFFFFF00
 
 	knightTop	dq	0xFFFFFFFFFFFF
-	knightBottom dq	0xFFFFFFFFFFFF0000
+	knightBottom	dq	0xFFFFFFFFFFFF0000
 	knightLeft	dq	0xFCFCFCFCFCFCFCFC
 	knightRight	dq	0x3F3F3F3F3F3F3F3F
 
@@ -130,7 +130,7 @@ loopai:
 	cmp rax, qWord [curScore]
 	jng finalScore
 	mov qWord [curScore], rax
-	;call print
+	call print
 	call pushWinningMove
 finalScore:
 	pop rax
@@ -194,7 +194,7 @@ negaLoop:
 	cmp rax, qWord [curScore]	;is nex score greater?
 	jng	keepScore
 	mov qWord [curScore], rax
-keepScore:				;not greater keep current
+keepScore:			;not greater keep current
 	pop rbx
 	pop rax
 
