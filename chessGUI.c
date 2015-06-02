@@ -24,7 +24,6 @@ long long gui; //gui bitmap
 extern long long aiPlayer;  //current player AI uses
 
 extern ai();
-extern aiMove();
 
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
@@ -40,18 +39,66 @@ GtkLayout* label;
 GtkEntry* entry;
 char path[1024]; //img folder path
 char tempPath[1024];
-
+int gameOver = 0;
+//string of input chars
+char *arg1;
+char *arg2;
 
 void addPiecesGui();
+static void addLabels();
 
 //do a move
 void move(){
+    //parse initial game options
+    if(strcmp(arg1,arg2) == 0){
+        ai(); //computer vs computer game
+    }
+
     printf("Moved\n");
     //ai to move
-    ai();
     loadLayout();
     addPiecesGui();
     aiPlayer *= -1;
+}
+
+
+//int initGui( int   argc, char *argv[] )
+int main(int argc, char *argv[])
+{
+    //if game settings entered
+    if(argc != 3){
+        printf("%s\n", "Please enter init game flags.\n"
+        "Ex: \"./Chess -h -c\"");
+        return 0;
+    }
+
+
+    arg1 = argv[1];
+    arg2 = argv[2];
+    aiPlayer = 1;
+
+    //LOAD GUI
+	gtk_init(NULL, NULL);
+	//get running dir put in swd
+   	getcwd(path, sizeof(path));
+	strcat(path, "/img/");
+   	createWindow();
+
+	addLabels();
+	loadLayout();
+
+
+    //add the pieces to board
+    addPiecesGui();
+
+    gtk_widget_show(layout);
+    gtk_widget_show_all(window);
+    //close on exit
+    g_signal_connect_swapped(G_OBJECT(window), "destroy",
+        G_CALLBACK(gtk_main_quit), NULL);
+    gtk_main ();
+
+    return 0;
 }
 
 void createWindow(){
@@ -94,7 +141,6 @@ void loadLayout(){
 }
 
 
-
 static void addLabels()
 {
     label = gtk_label_new("Piece Selection");
@@ -119,53 +165,8 @@ void callback( GtkWidget *widget,
     fflush(stdout);
 }
 
-
-//int initGui( int   argc, char *argv[] )
-int main(int argc, char *argv[])
-{
-    printf("%d", argc);
-    aiPlayer = 1;
-
-	gtk_init(&argc, &argv);
-	//get running dir put in swd
-   	getcwd(path, sizeof(path));
-	strcat(path, "/img/");
-
-   	 createWindow();
-
-	addLabels();
-	loadLayout();
-
-
-    //add the pieces to board
-    addPiecesGui();
-
-    // button = gtk_button_new_with_label("Print Text");
-    // gtk_widget_show(button);
-    // gtk_layout_put(GTK_LAYOUT(layout), button, 825, 150);
-    // gtk_signal_connect(GTK_OBJECT(button), "clicked",
-    //                    GTK_SIGNAL_FUNC(callback),
-    //                    (gpointer)entry);
-
-    gtk_widget_show(layout);
-    gtk_widget_show_all(window);
-
-
-    //close on exit
-    g_signal_connect_swapped(G_OBJECT(window), "destroy",
-    G_CALLBACK(gtk_main_quit), NULL);
-
-
-    gtk_main ();
-
-
-    return 0;
-}
-
 //add pieces to board in gui from global bitmaps
 void addPiecesGui(){
-
-
     int i, j;
     //clear the board first
     for(i = 0; i<64; i++){
