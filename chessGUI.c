@@ -19,6 +19,8 @@ extern long long whitePawns;
 // extern long long blackQueens;
 // extern long long blackKing;
 
+long long gui; //gui bitmap
+
 extern long long aiPlayer;  //current player AI uses
 
 extern ai();
@@ -60,7 +62,8 @@ void createWindow(){
     gtk_window_set_title (GTK_WINDOW (window), "Chess");
 
     //set window size
-    gtk_window_set_default_size(GTK_WINDOW(window), 1000, 800);
+    gtk_window_set_default_size(
+        GTK_WINDOW(window), 800, 850);
 
     // Create a 8x8 table
     table = gtk_table_new (1, 2, TRUE);
@@ -76,13 +79,14 @@ void loadLayout(){
     layout = gtk_layout_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER (window), layout);
 	strcpy(tempPath, path);
-    image = gtk_image_new_from_file(strcat(tempPath, "chessBoard.svg"));
+    image = gtk_image_new_from_file(
+        strcat(tempPath, "chessBoard.svg"));
     gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
 
 	//do the move button
 	bMove = gtk_button_new_with_label("MOVE");
 	gtk_widget_show(bMove);
-	gtk_layout_put(GTK_LAYOUT(layout), bMove, 825,250);
+	gtk_layout_put(GTK_LAYOUT(layout), bMove, 725,815);
     gtk_signal_connect(GTK_OBJECT(bMove), "clicked",
                        GTK_SIGNAL_FUNC(move),NULL);
 
@@ -104,7 +108,6 @@ static void addLabels()
     entry = gtk_entry_new();
     gtk_layout_put(GTK_LAYOUT(layout), entry, 825, 110);
     gtk_entry_set_max_length(entry, 4);
-
 }
 
 void callback( GtkWidget *widget,
