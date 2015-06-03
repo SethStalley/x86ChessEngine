@@ -114,12 +114,6 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
     }else{
         movePiece(position);
     }
-
-    //int x = ((i%8) * 100) + 20;
-    //int y = (abs((i/8)-7) * 100) + 20;
-    //printf("Position = %d\n", position);
-    //printf("x = %d \ny=%d\n", x, y);
-
   }
   return TRUE;
 }
@@ -129,14 +123,27 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 void move(){
     //parse initial game options
     //if computer vs computer
-    if(!strcmp(arg1,arg2) && !strcmp(arg1,"-c")
-            && !strcmp(arg2, "-c")){
+    if(!strcmp(arg1,"-c") && !strcmp(arg2, "-c")){
         ai(); //computer vs computer game
         printf("AI Moved\n");
     //if human vs human
-    }else if(!strcmp(arg1,arg2) &&
-        !strcmp(arg1,"-h") && !strcmp(arg2, "-h")){
+    }else if(!strcmp(arg1,"-h") && !strcmp(arg2, "-h")){
         printf("Human Moved\n");
+    }else if(!strcmp(arg1,"-h") && !strcmp(arg2, "-c")){
+        if(aiPlayer ==1){
+            printf("Human Moved\n");
+        }else{
+            ai();
+            printf("Computer Moved\n");
+        }
+    }else if(!strcmp(arg1,"-c") && !strcmp(arg2, "-h")){
+        puts("HERE");
+        if(aiPlayer ==1){
+            ai();
+            printf("Computer Moved\n");
+        }else{
+            printf("Human Moved\n");
+        }
     }
 
     //ai to move
