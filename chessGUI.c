@@ -27,7 +27,7 @@ int board[64];
 GtkWidget *window;
 GtkWidget *layout;
 GtkWidget *image;
-GtkWidget *button, *bMove; //butons
+GtkWidget *button, *bMove, *delete; //butons
 GtkLayout* label;
 GtkEntry* entry;
 char path[1024]; //img folder path
@@ -42,6 +42,7 @@ static void addLabels();
 void createWindow();
 void loadLayout();
 void move();
+void deletePiece();
 
 int pieceSelected = 0;
 
@@ -86,6 +87,34 @@ void movePiece(int movPos){
         move();
     }
     pieceSelected = 0;
+}
+
+
+void deletePiece(){
+    //if piece selected delete it
+    if(pieceSelected){
+        //copy over current bitMaps to temp vars
+        long long selectedPiece = 0x1;
+        selectedPiece <<= (pieceSelected -1);
+
+        int doMove = 0;
+
+        long long guiPiece, buffer;
+        int i;
+        //remove selected Piece
+        for(i = 0; i<12; i++){
+            //for bitmap of every piece type
+            guiPiece = *(&whitePawns+i);
+            buffer = guiPiece & selectedPiece;
+            if(buffer){//this bitmap has piece
+                *(&whitePawns+i) = guiPiece ^ selectedPiece;
+                break;
+            }
+        }
+
+        pieceSelected = 0;
+        loadLayout();
+    }
 }
 
 //when a mouse button is pressed
@@ -222,6 +251,13 @@ void loadLayout(){
 	gtk_layout_put(GTK_LAYOUT(layout), bMove, 725,815);
     gtk_signal_connect(GTK_OBJECT(bMove), "clicked",
                        GTK_SIGNAL_FUNC(move),NULL);
+
+    //delete a piece
+   	delete = gtk_button_new_with_label("DELETE");
+   	gtk_widget_show(delete);
+   	gtk_layout_put(GTK_LAYOUT(layout), delete, 650,815);
+       gtk_signal_connect(GTK_OBJECT(delete), "clicked",
+                          GTK_SIGNAL_FUNC(deletePiece),NULL);
 
     //mouse listener
     gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
