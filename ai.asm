@@ -105,79 +105,79 @@ section .text
 ;--------------------------------------
 ;Upper negaMax gets score for every current move on one side
 ai:
-	mov rdx, qWord [aiPlayer]
+	mov rdx, qWord [aiPlayer]		;move ai player into cur player
 	mov qWord [curPlayer], rdx
-	mov qWord [curScore], -3000
-	call pushGame
-	call getMoves
+	mov qWord [curScore], -3000		;worst posible score "-infinity"
+	call pushGame				;save current board state
+	call getMoves				;get all posible moves for cur player
 loopai:
-	call popGame
-	call pushGame
-	mov rcx, qWord [aiDepth]
-	inc rcx						;to counter initial dec in ai
-	push rax					;loop every piece counter
-	push qWord [curScore]
-	imul rdx, -1
-	push rdx
-	push rcx
+	call popGame				;get first of those moves off a stack
+	call pushGame				;save cur game state
+	mov rcx, qWord [aiDepth]		;how deep nega max to eval
+	inc rcx					;inc depth to offset initial dec
+	push rax				;loop every piece counter
+	push qWord [curScore]			;save cur game score so we don't loose
+	imul rdx, -1				;change player
+	push rdx				;push player into stack
+	push rcx				;push ai depth into stack for nega
 	call NegaMax				;get best move score
 	call popGame				;get game state back
-	pop rcx
+	pop rcx					;get args back
 	pop rdx
-	pop qWord [curScore]
-	imul rax, -1
+	pop qWord [curScore]			;get current best score back
+	imul rax, -1				;get nega max best score, imul because it's nega
 	imul rdx, -1				;change player
-	cmp rax, qWord [curScore]
-	jng finalScore
-	mov qWord [curScore], rax
+	cmp rax, qWord [curScore]		;compare nega score to current one
+	jng finalScore				;if it's not creater loop
+	mov qWord [curScore], rax		;if it is greater swap it
 	call print
-	call pushWinningMove
+	call pushWinningMove			;save this move, it may be best one
 finalScore:
-	pop rax
-	dec rax
-	cmp rax, 0					;check every piece?
-	jne loopai
+	pop rax					;pop the loop counter
+	dec rax					;dec the counter
+	cmp rax, 0				;check every piece?
+	jne loopai				;if not then loop
 	;if checkMate don't do anything
-	cmp qWord [curScore], -1500
-	jl checkMate
-	cmp qWord [curScore], 1500
-	jg checkMate
+	;cmp qWord [curScore], -1500		;commented this because resulted in ai not finishing mate	
+	;jl checkMate
+	;cmp qWord [curScore], 1500
+	;jg checkMate
 	call popWinningMove			;make the move
 	ret
 checkMate:
-	call popGame
+	call popGame				;if checkmate just give current game back
 	ret
 
 ;this is our AI, nega max recursive algorithm
 NegaMax:
-	push rbp					;save base pointer
+	push rbp				;save base pointer
 
 	mov rbp, rsp				;get pushed parameter
-	add rbp, 16
+	add rbp, 16				;align pointer to second arg
 	mov rcx, [rbp]				;move depth parameter to rcx
-	add rbp, 8
-	mov rdx, [rbp]
+	add rbp, 8				;move pointer to first arg
+	mov rdx, [rbp]				;score player to eval
 
-	dec rcx
-	cmp rcx, 0
+	dec rcx					;dec the depth counter
+	cmp rcx, 0				;if 0 we are done
 	je doneNegaMax
 
 	;minimum score
-	push rdx
-	mov rdx, -3000		;base score
-	mov qWord [curScore], rdx
+	push rdx			
+	mov rdx, -3000				;base worse score
+	mov qWord [curScore], rdx		;save it in curScore
 	pop rdx
 
-	mov qWord [curPlayer], rdx	;move cur player
+	mov qWord [curPlayer], rdx		;move cur player
 
-	call getMoves		;get all posible movs for that player
-	cmp rax, 0
+	call getMoves				;get all posible movs for that player
+	cmp rax, 0				;if we checked all moves we are done
 	je doneNegaMax
 negaLoop:
 	;for every move
-	call popGame
+	call popGame				;get a move off stack
 
-	push rax		;loop counter
+	push rax				;loop counter
 	push rbx
 	push rdx
 	push qWord [curScore]   ;save score
