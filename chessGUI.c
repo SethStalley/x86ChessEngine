@@ -29,11 +29,16 @@ extern ai();
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
 */
 
+//function to get pointer on click event
+GdkWindow*    gdk_window_get_pointer     (GdkWindow       *window,
+					  gint            *x,
+					  gint            *y,
+					  GdkModifierType *mask);
+
 int board[64];
 GtkWidget *window;
 GtkWidget *layout;
 GtkWidget *image;
-GtkWidget* table;
 GtkWidget *button, *bMove; //butons
 GtkLayout* label;
 GtkEntry* entry;
@@ -46,6 +51,29 @@ char *arg2;
 
 void addPiecesGui();
 static void addLabels();
+void createWindow();
+void loadLayout();
+
+
+//when a mouse button is pressed
+static gboolean
+button_press_event(GtkWidget *widget, GdkEventButton *event )
+{
+  if (event->button == 1 && event->y <=800){
+    int x = event->x / 100 + 1;
+    int y = abs(event->y / 100 - 9);
+    //get the bit position
+    int position = x+((y-1)*8);
+    //int x = ((i%8) * 100) + 20;
+    //int y = (abs((i/8)-7) * 100) + 20;
+    printf("Position = %d\n", position);
+    printf("x = %d \ny=%d\n", x, y);
+
+  }
+
+  return TRUE;
+}
+
 
 //do a move
 void move(){
@@ -78,21 +106,20 @@ int main(int argc, char *argv[])
     aiPlayer = 1;
 
     //LOAD GUI
-	gtk_init(NULL, NULL);
+	gtk_init(&argc, &argv);
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");
    	createWindow();
 
-	addLabels();
 	loadLayout();
-
 
     //add the pieces to board
     addPiecesGui();
 
     gtk_widget_show(layout);
     gtk_widget_show_all(window);
+
     //close on exit
     g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
@@ -111,9 +138,6 @@ void createWindow(){
     //set window size
     gtk_window_set_default_size(
         GTK_WINDOW(window), 800, 850);
-
-    // Create a 8x8 table
-    table = gtk_table_new (1, 2, TRUE);
 
     layout = gtk_layout_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER (window), layout);
@@ -137,23 +161,11 @@ void loadLayout(){
     gtk_signal_connect(GTK_OBJECT(bMove), "clicked",
                        GTK_SIGNAL_FUNC(move),NULL);
 
-    gtk_container_add(GTK_CONTAINER (layout), table);
-}
+    //mouse listener
+    gtk_widget_set_events (layout,GDK_BUTTON_PRESS_MASK);
 
-
-static void addLabels()
-{
-    label = gtk_label_new("Piece Selection");
-    gtk_layout_put((layout), label, 825, 25);
-    entry = gtk_entry_new();
-    gtk_layout_put(GTK_LAYOUT(layout), entry, 825, 50);
-    gtk_entry_set_max_length(entry, 4);
-
-    label = gtk_label_new("Piece Movement");
-    gtk_layout_put((layout), label, 825, 85);
-    entry = gtk_entry_new();
-    gtk_layout_put(GTK_LAYOUT(layout), entry, 825, 110);
-    gtk_entry_set_max_length(entry, 4);
+    gtk_signal_connect (GTK_OBJECT (layout), "button_press_event",
+              (GtkSignalFunc) button_press_event, NULL);
 }
 
 void callback( GtkWidget *widget,
