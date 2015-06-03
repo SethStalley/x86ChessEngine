@@ -23,8 +23,8 @@ What To Do:
   
 Running  
 ====
-`make && ./Chess -h -c` 
-Human = '-h' flag & Computer = '-c' 
+`make && ./Chess -h -c`  
+Human = '-h' flag & Computer = '-c'  
 you can do '-c -c' or '-c -h', etc
  
 
