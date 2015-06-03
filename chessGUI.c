@@ -6,18 +6,6 @@
 
 //use asm global bitmaps to load board later
 extern long long whitePawns;
-// extern long long whiteBishops;
-// extern long long whiteKnights;
-// extern long long whiteCastles;
-// extern long long whiteQueens;
-// extern long long whiteKing;
-//
-// extern long long blackPawns;
-// extern long long blackBishops;
-// extern long long blackKnights;
-// extern long long blackCastles;
-// extern long long blackQueens;
-// extern long long blackKing;
 
 long long gui; //gui bitmap
 
@@ -112,9 +100,22 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
     int position = x+((y-1)*8);
     if(!pieceSelected){
         pieceSelected = position;  //select the piece to move
+        //add hightlight image
+        int imgx = (((position-1)%8) * 100);
+        int imgy = (abs(((position-1)/8)-7) * 100);
+        loadLayout();
+        strcpy(tempPath, path);
+        image = gtk_image_new_from_file(strcat(tempPath, "highlight.png"));
+        gtk_layout_put(GTK_LAYOUT(layout), image, imgx, imgy);
+        gtk_widget_show_all(window);
     }else{
-        movePiece(position);
+        if(position == pieceSelected){
+            pieceSelected = 0;
+            loadLayout();
+        }else
+            movePiece(position);
     }
+
   }
   return TRUE;
 }
@@ -327,5 +328,5 @@ void addPiecesGui(){
         	    break;
         }
     }
-    gtk_widget_show_all(window);
+    gtk_widget_show_all(layout);
 }
