@@ -1,7 +1,7 @@
 x86ChessEngine  
 =====  
 
-A simple chess engine AI wrritten in LINUX NASM64 assembly  
+A simple chess engine AI wrritten in LINUX NASM64 assembly over the weekend for school.
 
 ![alt tag](https://raw.githubusercontent.com/CrSeth/x86ChessEngine/master/hvc.gif?token=AFCwpfAAaVU2gQBT9gk98c31-9Oc9fJWks5Vd8GWwA%3D%3D)
 
