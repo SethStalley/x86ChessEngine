@@ -393,7 +393,6 @@ numMoves:
 	call getMoves
 	pop rdx
 
-
 ;--------------------------------
 ;Push all posible moves into stack
 ;also place num of posible moves in rax

@@ -53,7 +53,52 @@ void addPiecesGui();
 static void addLabels();
 void createWindow();
 void loadLayout();
+void movd();
 
+int pieceSelected = 0;
+
+
+void movePiece(int movPos){
+    //copy over current bitMaps to temp vars
+    long long selectedPiece = 0x1;
+    selectedPiece <<= (pieceSelected -1);
+    long long movPosition = 0x1;
+    movPosition <<= (movPos -1);
+
+    int doMove = 0;
+
+    long long guiPiece, buffer, *pieceMoveBoard;
+    int i, j;
+    //remove selected Piece
+    for(i = 0; i<12; i++){
+        //for bitmap of every piece type
+        guiPiece = *(&whitePawns+i);
+        buffer = guiPiece & selectedPiece;
+        if(buffer){//this bitmap has piece
+            *(&whitePawns+i) = guiPiece ^ selectedPiece;
+            pieceMoveBoard = (&whitePawns+i);
+            doMove = 1;
+            break;
+        }
+    }
+
+    for(i = 0; i<12; i++){
+        //for bitmap of every piece type
+        guiPiece = *(&whitePawns+i);
+        buffer = guiPiece & movPosition;
+        if(buffer){//this bitmap has piece
+            *(&whitePawns+i) = guiPiece ^ movPosition;
+            break;
+        }
+    }
+
+    //do the move
+    if(doMove){
+        *pieceMoveBoard |= movPosition;
+        move();
+    }
+    pieceSelected = 0;
+}
 
 //when a mouse button is pressed
 static gboolean
@@ -64,13 +109,18 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
     int y = abs(event->y / 100 - 9);
     //get the bit position
     int position = x+((y-1)*8);
+    if(!pieceSelected){
+        pieceSelected = position;  //select the piece to move
+    }else{
+        movePiece(position);
+    }
+
     //int x = ((i%8) * 100) + 20;
     //int y = (abs((i/8)-7) * 100) + 20;
-    printf("Position = %d\n", position);
-    printf("x = %d \ny=%d\n", x, y);
+    //printf("Position = %d\n", position);
+    //printf("x = %d \ny=%d\n", x, y);
 
   }
-
   return TRUE;
 }
 
@@ -78,14 +128,19 @@ button_press_event(GtkWidget *widget, GdkEventButton *event )
 //do a move
 void move(){
     //parse initial game options
-    if(strcmp(arg1,arg2) == 0){
+    //if computer vs computer
+    if(!strcmp(arg1,arg2) && !strcmp(arg1,"-c")
+            && !strcmp(arg2, "-c")){
         ai(); //computer vs computer game
+        printf("AI Moved\n");
+    //if human vs human
+    }else if(!strcmp(arg1,arg2) &&
+        !strcmp(arg1,"-h") && !strcmp(arg2, "-h")){
+        printf("Human Moved\n");
     }
 
-    printf("Moved\n");
     //ai to move
     loadLayout();
-    addPiecesGui();
     aiPlayer *= -1;
 }
 
@@ -100,29 +155,27 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-
     arg1 = argv[1];
     arg2 = argv[2];
     aiPlayer = 1;
 
-    //LOAD GUI
-	gtk_init(&argc, &argv);
 	//get running dir put in swd
    	getcwd(path, sizeof(path));
 	strcat(path, "/img/");
+
+    //LOAD GUI
+	gtk_init(&argc, &argv);
    	createWindow();
 
 	loadLayout();
 
-    //add the pieces to board
-    addPiecesGui();
-
-    gtk_widget_show(layout);
-    gtk_widget_show_all(window);
-
     //close on exit
     g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
+
+    gtk_signal_connect (GTK_OBJECT (window), "button_press_event",
+              (GtkSignalFunc) button_press_event, NULL);
+
     gtk_main ();
 
     return 0;
@@ -162,10 +215,16 @@ void loadLayout(){
                        GTK_SIGNAL_FUNC(move),NULL);
 
     //mouse listener
-    gtk_widget_set_events (layout,GDK_BUTTON_PRESS_MASK);
+    gtk_widget_set_events (window,GDK_BUTTON_PRESS_MASK);
 
-    gtk_signal_connect (GTK_OBJECT (layout), "button_press_event",
-              (GtkSignalFunc) button_press_event, NULL);
+
+    gtk_widget_show(layout);
+    gtk_widget_show_all(window);
+
+    addPiecesGui();
+
+
+
 }
 
 void callback( GtkWidget *widget,
