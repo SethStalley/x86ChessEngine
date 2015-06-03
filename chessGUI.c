@@ -53,7 +53,7 @@ void addPiecesGui();
 static void addLabels();
 void createWindow();
 void loadLayout();
-void movd();
+void move();
 
 int pieceSelected = 0;
 
@@ -104,7 +104,8 @@ void movePiece(int movPos){
 static gboolean
 button_press_event(GtkWidget *widget, GdkEventButton *event )
 {
-  if (event->button == 1 && event->y <=800){
+  if (event->button == 1 && event->y <=800
+            && event-> x <= 800){
     int x = event->x / 100 + 1;
     int y = abs(event->y / 100 - 9);
     //get the bit position
