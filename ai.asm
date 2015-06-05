@@ -78,6 +78,8 @@ section .data
 	firstWhitePawnRow dq 0xff00
 	fistBlackPawnRow dq 0xff000000000000
 
+	
+
 	;game helper flags
 	kingMove	dq	0		;if it is a king move
 
@@ -334,23 +336,23 @@ checkNextPieceRemove:
 	dec rdx			;dec loop
 	cmp rdx, 0		;end of loop?
 	jne beginRemoval
-	call pushGame			;save the game in this state
+	call pushGame		;save the game in this state
 	sub rbx, 8
-beginRestoreRemoved:
+beginRestoreRemoved:		;loop to restore bitboard
 	pop qWord [rbx]
 	sub rbx, 8
 	inc rdx
-	cmp rdx, 6
+	cmp rdx, 6		;for all 6 of bitmaps
 	jne beginRestoreRemoved
 	pop rcx
-	pop rbx
+	pop rbx			;get these back
 	pop rdx
 	ret
 
 ;-------------------------------
 ;Fill board with all black positions
 ;-------------------------------
-fillBlackBoard:
+fillBlackBoard:				;or all black bitboards
 	push rax
 	push rcx
 	mov rcx, 5
@@ -361,7 +363,7 @@ loopfillBlackBoard:			;loop through the bitboards
 	dec rcx
 	cmp rcx, 0
 	jnl loopfillBlackBoard
-	mov [blackBoard], rax
+	mov [blackBoard], rax		;mov them to "blackBoard"
 	pop rcx
 	pop rax
 	ret
@@ -369,7 +371,7 @@ loopfillBlackBoard:			;loop through the bitboards
 ;-------------------------------
 ;Fill board with all white positions
 ;-------------------------------
-fillWhiteBoard:					;same as fillBlackBoard but white
+fillWhiteBoard:				;same as fillBlackBoard but white
 	push rax
 	push rcx
 	mov rcx, 5
@@ -386,7 +388,6 @@ loopfillWhiteBoard:
 
 ;--------------------------------
 ;Get num of movs posible from a position
-;WARNING THIS DOESN"T WORK AS EXPECTED YET
 ;--------------------------------
 numMoves:
 	push rdx
@@ -405,37 +406,37 @@ getMoves:
 	;KING move, use castle and bishop rules together
 	;also turn on kingMove flag so we don't more more
 	;than one step at a time
-	mov qWord [kingMove], 1
-	push qWord whiteKing
-	call castleMoves
+	mov qWord [kingMove], 1		;turn this flag on
+	push qWord whiteKing		;push king bitmap to procedure
+	call castleMoves		;do castle movs for king
 	add rsp, 8
-	push qWord whiteKing
-	call bishopMoves
+	push qWord whiteKing		
+	call bishopMoves		;do bishp movs for king
 	add rsp, 8
-	mov qWord [kingMove], 0
+	mov qWord [kingMove], 0		;turn of this flag
 
 	;queen move, use castle and bishop rules together
-	push qWord whiteQueens
-	call castleMoves
+	push qWord whiteQueens		;push queens bitmap to procedure
+	call castleMoves		;castles rules applied to queen
 	add rsp, 8
 	push qWord whiteQueens
-	call bishopMoves
+	call bishopMoves		;bishop rules applied to queen
 	add rsp, 8
 
 	;knight Moves
-	call knightMoves
+	call knightMoves		;find all knight moves
 
 	;bishop moves
-	push qWord whiteBishops	;addres to bishop bitmap
-	call bishopMoves
+	push qWord whiteBishops		;addres to bishop bitmap
+	call bishopMoves		;find all bishop moves
 	add rsp, 8
 
 	;castle moves
-    push qWord whiteCastles ;we are passing castle bitboard
-	call castleMoves ;can be used with kings and queens too
+    	push qWord whiteCastles 	;we are passing castle bitboard
+	call castleMoves 		;do castle moves
 	add rsp, 8
 
-	call pawnMoves		;figure out pawn moves
+	call pawnMoves			;figure out pawn moves
 
 	pop rbx
 	pop rdx

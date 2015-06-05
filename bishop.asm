@@ -53,9 +53,9 @@ bishopMoves:
     jmp Bishop
 	blackBishop:
     ;move black stuff to buffers
-    mov rdx, [piece]       ;save white piece address
-    add rdx, 8*6         ;get black variant of piece
-    mov [piece], rdx   ;use save as pointer to the black one
+    mov rdx, [piece]       	;save white piece address
+    add rdx, 8*6         	;get black variant of piece
+    mov [piece], rdx   		;use save as pointer to the black one
     mov rdx, fillBlackBoard
     mov [fillBoard], rdx
     mov rdx, blackBoard
@@ -64,11 +64,11 @@ bishopMoves:
 Bishop:
     mov rdx, qWord [piece]
 
-    cmp rax,0x0		    ;if we checked all the bits
-    je doneBishopMove	;check for all knights
+    cmp rax,0x0		    	;if we checked all the bits
+    je doneBishopMove		;check for all knights
     push rax
 
-    push rax		    ;save bit being checked
+    push rax		    	;save bit being checked
     and rax, [rdx]		;same color piece here?
     cmp rax, 0
     pop rax
@@ -84,39 +84,39 @@ Bishop:
     xor rdx, rax
     mov qWord [boardBuffer], rdx
 
-    topRight:              ;top right move
+    topRight:              	;top right move
     ;check for the move
     push rax
 tRightLoop:
-	and rax, [topEdge]    ;make sure it is not on top edge
+	and rax, [topEdge]    	;make sure it is not on top edge
 	and rax, [rightEdge]
 	cmp rax, 0
-	je topLeft        ;is a friendly piece already here?
+	je topLeft        	;is a friendly piece already here?
 
 	;do the move
-	shl rax, 9        ;one place forward
+	shl rax, 9        	;one place forward
 	;valid move?
 	call [fillBoard]
 	push rax
 	push rdx
-	mov rdx, [board]  ;pass address to knight board
-	and rax, [rdx]      ;acess data
+	mov rdx, [board]  	;pass address to knight board
+	and rax, [rdx]      	;acess data
 	pop rdx
-	cmp rax, 0          ;check if same color piece here
+	cmp rax, 0  	        ;check if same color piece here
 	pop rax
-	jne topLeft       ;is a friendly piece already here?
+	jne topLeft     	;is a friendly piece already here?
 
 	;if not friendly here, store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	;store the move
 	push rcx
-	mov rcx, [piece]  ;push pointer to piece bitmap
-	push qWord [rcx]          ;push the bitmap
+	mov rcx, [piece]  	;push pointer to piece bitmap
+	push qWord [rcx]        ;push the bitmap
 	;apply move to the knight bitmap
 	mov [rcx], rdx
 	call removePiece	;remove black piece
-	pop qWord [rcx]           ;get it back
+	pop qWord [rcx]         ;get it back
 	pop rcx
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
@@ -131,35 +131,35 @@ tRightLoop:
 	pop rax
 	push rax
 tLeftLoop:
-	and rax, [topEdge]    ;make sure it is not on top edge
+	and rax, [topEdge]    	;make sure it is not on top edge
 	and rax, [leftEdge]
 	cmp rax, 0
-	je botLeft        ;is a friendly piece already here?
+	je botLeft       	;is a friendly piece already here?
 
 	;do the move
-	shl rax, 7        ;one place forward
+	shl rax, 7        	;one place forward
 	;valid move?
 	call [fillBoard]
 	push rax
 	push rdx
-	mov rdx, [board]  ;pass address to knight board
-	and rax, [rdx]      ;acess data
+	mov rdx, [board]  	;pass address to knight board
+	and rax, [rdx]      	;acess data
 	pop rdx
-	cmp rax, 0          ;check if same color piece here
+	cmp rax, 0          	;check if same color piece here
 	pop rax
-	jne botLeft       ;is a friendly piece already here?
+	jne botLeft       	;is a friendly piece already here?
 
 	;if not friendly here, store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	;store the move
 	push rcx
-	mov rcx, [piece]  ;push pointer to piece bitmap
-	push qWord [rcx]          ;push the bitmap
+	mov rcx, [piece]  	;push pointer to piece bitmap
+	push qWord [rcx]        ;push the bitmap
 	;apply move to the knight bitmap
 	mov [rcx], rdx
 	call removePiece	;remove black piece
-	pop qWord [rcx]           ;get it back
+	pop qWord [rcx]         ;get it back
 	pop rcx
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
@@ -176,32 +176,32 @@ bLeftLoop:
 	and rax, [bottomEdge]    ;make sure it is not on top edge
 	and rax, [leftEdge]
 	cmp rax, 0
-	je botRight        ;is a friendly piece already here?
+	je botRight        	;is a friendly piece already here?
 
 	;do the move
-	shr rax, 9        ;one place forward
+	shr rax, 9        	;one place forward
 	;valid move?
 	call [fillBoard]
 	push rax
 	push rdx
-	mov rdx, [board]  ;pass address to knight board
-	and rax, [rdx]      ;acess data
+	mov rdx, [board]  	;pass address to knight board
+	and rax, [rdx]      	;acess data
 	pop rdx
-	cmp rax, 0          ;check if same color piece here
+	cmp rax, 0 	        ;check if same color piece here
 	pop rax
-	jne botRight       ;is a friendly piece already here?
+	jne botRight     	;is a friendly piece already here?
 
 	;if not friendly here, store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	;store the move
 	push rcx
-	mov rcx, [piece]  ;push pointer to piece bitmap
-	push qWord [rcx]          ;push the bitmap
+	mov rcx, [piece]  	;push pointer to piece bitmap
+	push qWord [rcx]        ;push the bitmap
 	;apply move to the knight bitmap
 	mov [rcx], rdx
 	call removePiece	;remove black piece
-	pop qWord [rcx]           ;get it back
+	pop qWord [rcx]         ;get it back
 	pop rcx
 	mov rdx, qWord [boardBuffer]
 	cmp qWord [pieceDie], 1
@@ -218,27 +218,27 @@ bRightLoop:
 	and rax, [bottomEdge]    ;make sure it is not on top edge
 	and rax, [rightEdge]
 	cmp rax, 0
-	je nextBishop        ;is a friendly piece already here?
+	je nextBishop       	 ;is a friendly piece already here?
 
 	;do the move
-	shr rax, 7        ;one place forward
+	shr rax, 7        	;one place forward
 	;valid move?
 	call [fillBoard]
 	push rax
 	push rdx
-	mov rdx, [board]  ;pass address to knight board
-	and rax, [rdx]      ;acess data
+	mov rdx, [board]  	;pass address to knight board
+	and rax, [rdx]      	;acess data
 	pop rdx
-	cmp rax, 0          ;check if same color piece here
+	cmp rax, 0          	;check if same color piece here
 	pop rax
-	jne nextBishop       ;is a friendly piece already here?
+	jne nextBishop       	;is a friendly piece already here?
 
 	;if not friendly here, store move
 	inc rcx			;if valid move inc move counter
 	or rdx, rax
 	;store the move
 	push rcx
-	mov rcx, [piece]  ;push pointer to piece bitmap
+	mov rcx, [piece]  	;push pointer to piece bitmap
 	push qWord [rcx]          ;push the bitmap
 	;apply move to the knight bitmap
 	mov [rcx], rdx
