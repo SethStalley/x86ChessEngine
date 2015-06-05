@@ -13,7 +13,6 @@ Features:
 What doesn't Work:
  * castling
  * pawn passant
- * pawn promotion (only works on ai side)
   
 What To Do:
  * Move from NegaMax to Alpha-Beta AI  
@@ -23,6 +22,7 @@ What To Do:
   
 Running  
 ====
+Requires: NASM, GCC, gtk2-dev  
 `make && ./Chess -h -c`  
 Human = '-h' flag & Computer = '-c'  
 you can do '-c -c' or '-c -h', etc
