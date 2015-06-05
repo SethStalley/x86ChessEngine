@@ -1,4 +1,5 @@
 global pawnMoves
+global humanPawnPromotion
 
 extern curPlayer
 extern whitePawns
@@ -20,12 +21,41 @@ extern rightEdge
 extern leftEdge
 
 extern firstWhitePawnRow, fistBlackPawnRow
+extern aiPlayer
 
 extern print
 
 section .data
 	pawnPromote dq 0	;if we need promote pawn flag
 section .text
+
+;This check for pawn promotion after human moves
+humanPawnPromotion:
+	push rdx
+	cmp qWord [aiPlayer], -1;which player are we
+	jne hBlackPromotion	;if black
+	mov rax, [whitePawns]	;mov white pawns bits over
+	not qWord [topEdge]	;check top row
+	and rax, [topEdge]	;if piece here promote
+	not qWord [topEdge]
+	cmp rax, 0		;is there a piece?
+	je hPromoteDone		;no promotion
+	xor [whitePawns], rax   ;remove pawn
+	or [whiteQueens], rax   ;promote to queen
+	jmp hPromoteDone	;done white
+hBlackPromotion:
+	mov rax, [blackPawns]	;mov white pawns bits over
+	not qWord [bottomEdge]	;check top row
+	and rax, [bottomEdge]	;if piece here promote
+	not qWord [bottomEdge]
+	cmp rax, 0		;is there a piece?
+	je hPromoteDone		;no promotion
+	xor [blackPawns], rax   ;remove pawn
+	or [blackQueens], rax   ;promote to queen
+hPromoteDone:
+	pop rdx
+	ret
+
 ;--------------------------------
 ;Pawn movement AI
 ; [curPlayer] = 1 white	player
@@ -82,6 +112,8 @@ wPawnNoPromotion:
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q1
+	xor rdx, rax
+	mov [whitePawns], rdx
 	mov rdx, [whiteQueens]
 	or rdx, rax
 	mov [whiteQueens], rdx
@@ -122,6 +154,8 @@ pRAttack:;right push attack
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q2
+	xor rdx, rax
+	mov [whitePawns], rdx
 	mov rdx, [whiteQueens]
 	or rdx, rax
 	mov [whiteQueens], rdx
@@ -161,6 +195,8 @@ pLAttack:;left push attack
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q3
+	xor rdx, rax
+	mov [whitePawns], rdx
 	mov rdx, [whiteQueens]
 	or rdx, rax
 	mov [whiteQueens], rdx
@@ -247,6 +283,8 @@ bPawnNoPromotion:
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q4
+	xor rdx, rax
+	mov [blackPawns], rdx
 	mov rdx, [blackQueens]
 	or rdx, rax
 	mov [blackQueens], rdx
@@ -286,6 +324,8 @@ pbRAttack:;right push attack
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q5
+	xor rdx, rax
+	mov [whitePawns], rdx
 	mov rdx, [blackQueens]
 	or rdx, rax
 	mov [blackQueens], rdx
@@ -324,6 +364,8 @@ pbLAttack:;left push attack
 	;check for pawn promotion and do if
 	cmp qWord [pawnPromote], 1
 	jne q6
+	xor rdx, rax
+	mov [whitePawns], rdx
 	mov rdx, [blackQueens]
 	or rdx, rax
 	mov [blackQueens], rdx

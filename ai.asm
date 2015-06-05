@@ -179,123 +179,123 @@ negaLoop:
 
 	push rax				;loop counter
 	push rbx
+	push rdx		
+	push qWord [curScore]   		;save score
+	imul rdx, -1				;switch player
 	push rdx
-	push qWord [curScore]   ;save score
-	imul rdx, -1			;switch player
-	push rdx
-	push rcx					;push parameter
-	call NegaMax
-	pop rcx
+	push rcx				;push parameter
+	call NegaMax				;recurse
+	pop rcx					;get args back
 	pop rdx
-	pop qWord [curScore]	;get score back
-	pop rdx
-	imul rax, -1
+	pop qWord [curScore]			;get score back
+	pop rdx					;get player back
+	imul rax, -1				;negate the retuned eval
 	;is new score higer? if so then swap
-	cmp rax, qWord [curScore]	;is nex score greater?
-	jng	keepScore
-	mov qWord [curScore], rax
+	cmp rax, qWord [curScore]		;is next score greater?
+	jng	keepScore			;if it's not greater keep the current
+	mov qWord [curScore], rax		;if greater store it
 keepScore:			;not greater keep current
 	pop rbx
 	pop rax
 
 	dec rax			;dec moves to do counter
-	cmp rax, 0
-	jne negaLoop
+	cmp rax, 0		;if we analyzed all moves 0 we are done
+	jne negaLoop		;else loop for next move
 	pop rbp
-	mov rax, qWord [curScore]
+	mov rax, qWord [curScore];return our score
 	ret
 doneNegaMax:
-	call eval
-	imul rax, rdx
-	pop rbp
-	ret
+	call eval		;bottom of tree eval the game state
+	imul rax, rdx		;imul it by player color
+	pop rbp			;give base pointer back for param
+	ret			;base return of negamax
 
 ;-------------------------------
 ;Evaluates a players side against the oposite
 ;Sned player to evar in rcx, 1 = white | -1 = black
-;Algorithm is Weight * (numWhite piece - numBlack Piece) * color
+;Algorithm is Weight * (numWhite piece - numBlack Piece) *mobility * color
 ;------------------
 ;values:
-;pawns = 1
-;bishops & knights = 3
-;rooks = 5
-;queen = 9
-;king = 200
+;pawns = 10
+;bishops & knights = 30
+;rooks = 50
+;queen = 90
+;king = 2000
 ;-------------------------------
 eval:
 	push rbx
-	push rcx
-	mov rbx, whitePawns
+	push rcx			;store these registers to give back
+	mov rbx, whitePawns		;store address to first bitmap
 	;Pawns
 	popcnt rcx, [rbx]		;bishop bitBoard
-	imul rcx, 10		;bishop weight
+	imul rcx, 10			;bishop weight
 	add rax, rcx			;add it to values
-	popcnt rcx, [rbx+ 48]
+	popcnt rcx, [rbx+ 48]		;black bitboard weight
 	imul rcx, 10
-	sub rax, rcx
+	sub rax, rcx			;sub from white
 
 	;Bishops
-	add rbx, 8
+	add rbx, 8			;move foward to next bitmap
 	popcnt rcx, [rbx]		;bishop bitBoard
 	imul rcx, 30			;bishop weight
 	add rax, rcx			;add it to values
-	popcnt rcx, [rbx+ 48]
-	imul rcx, 30
-	sub rax, rcx
+	popcnt rcx, [rbx+ 48]		;now check black bishop
+	imul rcx, 30			;mul num by material weight
+	sub rax, rcx			;sub it from the white value
 
 	;Knights
-	add rbx, 8
+	add rbx, 8			;move to knight bitboard
 	popcnt rcx, [rbx]		;kights to bitboard
 	imul rcx, 30			;knight weight
-	add rax, rcx
-	popcnt rcx, [rbx+48]
-	imul rcx, 30
-	sub rax, rcx
+	add rax, rcx			;add it to the score
+	popcnt rcx, [rbx+48]		;move to black knights
+	imul rcx, 30			;get black score for knights
+	sub rax, rcx			;sub that from white
 
 	;Castles
-	add rbx, 8
+	add rbx, 8			;mov to castle bitmap
 	popcnt rcx, [rbx]		;rooks
 	imul rcx, 50			;rook value
 	add rax, rcx
-	popcnt rcx, [rbx+48]
+	popcnt rcx, [rbx+48]		;jump to black bitmap
 	imul rcx, 50
-	sub rax, rcx
+	sub rax, rcx			;sub from white 
 
 	;Queens
-	add rbx, 8
+	add rbx, 8			;mov to queens
 	popcnt rcx, [rbx]		;queens
 	imul rcx, 90			;queen value
 	add rax, rcx
-	popcnt rcx, [rbx+48]
+	popcnt rcx, [rbx+48]		;mov to black queens
 	imul rcx, 90
-	sub rax, rcx
+	sub rax, rcx			;sub black from white queens
 
 	;King
 	add rbx, 8
 	popcnt rcx, [rbx]		;still have a king?
 	imul rcx, 2000			;king's value
 	add rax, rcx
-	popcnt rcx, [rbx+48]
+	popcnt rcx, [rbx+48]		;move black king
 	imul rcx, 2000
 	sub rax, rcx
 
 	;calculate mobility as part of EVAL
-	push qWord [curPlayer]
+	push qWord [curPlayer]		;save cur player & last movAddress 
 	push qWord [lastMovA]
-	push rax
-	mov qWord [curPlayer], 1
-	call numMoves			;get num moves posible
+	push rax			;save current score
+	mov qWord [curPlayer], 1	
+	call numMoves			;get num moves posible for white
 	mov rcx, rax
 	pop rax
-	add rax, rcx			;add mobility weight
+	add rax, rcx			;add mobility weight to score
 	push rax
 	mov qWord [curPlayer], -1	;now for black player
 	call numMoves			;num of moves
 	mov rcx, rax			;sub num black moves
 	pop rax
-	sub rax, rcx
-	pop qWord [lastMovA]
-	pop qWord [curPlayer]
+	sub rax, rcx			;sbu black mobility from white's
+	pop qWord [lastMovA]		;get last move address pointer back
+	pop qWord [curPlayer]		;and cur player
 
 	pop rcx
 	pop rbx
@@ -306,30 +306,30 @@ eval:
 ;the black piece from board
 ;-------------------------------
 removePiece:
-	mov qWord [pieceDie], 0
+	mov qWord [pieceDie], 0	;if piece removed we change this flag to 1
 	push rdx
-	push rbx
+	push rbx		;store these
 	push rcx
-	mov rdx, 6
-	cmp qWord [curPlayer], 1
+	mov rdx, 6		;there are 6 pieces per side
+	cmp qWord [curPlayer], 1;if we are white
 	jne whiteRemove
 	;remove black piece
-	mov rbx, blackPawns
+	mov rbx, blackPawns	;we are going to remove from black
 	jmp beginRemoval
 whiteRemove:
-	mov rbx, whitePawns
+	mov rbx, whitePawns	;remove from white
 beginRemoval:
-	mov rcx, [rbx]
-	push rcx
+	mov rcx, [rbx]		;move bitmap to rcx
+	push rcx		
 	push rax
-	and rax, rcx
+	and rax, rcx		;if there is a piece to remove (overlap)
 	cmp rax, 0
 	pop rax
 	je checkNextPieceRemove
-	xor rcx, rax
+	xor rcx, rax		;remove the piece then
 	mov qWord [pieceDie], 1	;mark that a piece died
 checkNextPieceRemove:
-	mov [rbx], rcx
+	mov [rbx], rcx		;save the changes back to bimap
 	add rbx, 8		;move to the next piece type
 	dec rdx			;dec loop
 	cmp rdx, 0		;end of loop?

@@ -12,6 +12,7 @@ long long gui; //gui bitmap
 extern long long aiPlayer;  //current player AI uses
 
 extern ai();
+extern humanPawnPromotion();
 
 /*
 gcc chessGUI.c -o run `pkg-config --cflags --libs gtk+-2.0`
@@ -85,6 +86,7 @@ void movePiece(int movPos){
     if(doMove){
         *pieceMoveBoard |= movPosition;
         move();
+    	humanPawnPromotion(); //promote pawn check
     }
     pieceSelected = 0;
 }
