@@ -28,10 +28,6 @@ Human = '-h' flag & Computer = '-c'
 you can do '-c -c' or '-c -h', etc
  
 
-LICENSE
-==== 
-MIT: http://rem.mit-license.org   
-
 ----
 Computer Architecture Project  
 @Instituto Tecnológico de Costa Rica
